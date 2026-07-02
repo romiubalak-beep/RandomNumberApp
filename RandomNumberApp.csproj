@@ -9,8 +9,4 @@
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <AndroidResource Include="Resources\layout\activity_main.xml" />
-  </ItemGroup>
 </Project>
