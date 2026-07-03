@@ -21,7 +21,6 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         
-        // إنشاء كائن RandomNumberGenerator
         rng = RandomNumberGenerator.Create();
         
         // طلب صلاحية العرض فوق التطبيقات
@@ -36,7 +35,7 @@ public class MainActivity : Activity
             }
         }
         
-        // إنشاء واجهة التطبيق الرئيسية
+        // إنشاء واجهة التطبيق
         LinearLayout layout = new LinearLayout(this);
         layout.Orientation = Orientation.Vertical;
         layout.SetPadding(50, 50, 50, 50);
@@ -86,7 +85,6 @@ public class MainActivity : Activity
         
         while (isRunning)
         {
-            // خلط باستخدام Fisher-Yates مع RandomNumberGenerator
             int n = numbers.Count;
             for (int i = n - 1; i > 0; i--)
             {
@@ -98,7 +96,6 @@ public class MainActivity : Activity
                 numbers[j] = temp;
             }
             
-            // عرض أول 10 أرقام
             string result = "الخلط السريع:\n";
             for (int i = 0; i < Math.Min(10, numbers.Count); i++)
             {
@@ -106,11 +103,9 @@ public class MainActivity : Activity
             }
             textView.Text = result;
             
-            // التحقق من الأرقام 1، 2، 3
             if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
             {
                 Toast.MakeText(this, "تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
-                // إرسال إشارة لتغيير لون الزر العائم
                 Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
                 SendBroadcast(colorIntent);
             }
