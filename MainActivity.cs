@@ -16,14 +16,14 @@ public class MainActivity : Activity
     private TextView textView;
     private Button startButton;
     private bool isRunning = false;
-    private View floatingView;
-    private Button floatingButton;
-    private Android.Views.WindowManager windowManager;
-    private WindowManagerLayoutParams layoutParams;
+    private RandomNumberGenerator rng;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        
+        // إنشاء كائن RandomNumberGenerator
+        rng = RandomNumberGenerator.Create();
         
         // طلب صلاحية العرض فوق التطبيقات
         if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
@@ -59,60 +59,9 @@ public class MainActivity : Activity
         
         SetContentView(layout);
         
-        // إنشاء الزر العائم بعد التحميل
-        CreateFloatingButton();
-    }
-
-    private void CreateFloatingButton()
-    {
-        try
-        {
-            // إنشاء الزر العائم
-            floatingButton = new Button(this);
-            floatingButton.Text = "⚡";
-            floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 30);
-            floatingButton.SetBackgroundColor(Color.Blue);
-            floatingButton.SetTextColor(Color.White);
-            
-            // إنشاء Layout بسيط للزر
-            LinearLayout container = new LinearLayout(this);
-            container.AddView(floatingButton);
-            floatingView = container;
-            
-            // إعدادات النافذة العائمة
-            int type;
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-            {
-                type = (int)WindowManagerTypes.ApplicationOverlay;
-            }
-            else
-            {
-                type = (int)WindowManagerTypes.Phone;
-            }
-            
-            layoutParams = new WindowManagerLayoutParams(
-                WindowManagerLayoutParams.WrapContent,
-                WindowManagerLayoutParams.WrapContent,
-                type,
-                (int)WindowManagerFlags.NotFocusable,
-                Format.Translucent);
-            
-            layoutParams.Gravity = (int)GravityFlags.Top | (int)GravityFlags.Right;
-            layoutParams.X = 0;
-            layoutParams.Y = 200;
-            
-            // الحصول على WindowManager
-            windowManager = (Android.Views.WindowManager)GetSystemService(WindowService);
-            
-            // إضافة الزر
-            windowManager.AddView(floatingView, layoutParams);
-            
-            Toast.MakeText(this, "تم إنشاء الزر العائم", ToastLength.Short).Show();
-        }
-        catch (Exception ex)
-        {
-            Toast.MakeText(this, "خطأ في الزر العائم: " + ex.Message, ToastLength.Long).Show();
-        }
+        // بدء خدمة الزر العائم
+        Intent serviceIntent = new Intent(this, typeof(FloatingButtonService));
+        StartService(serviceIntent);
     }
 
     private void StartShuffling(object sender, EventArgs e)
@@ -142,7 +91,9 @@ public class MainActivity : Activity
             int n = numbers.Count;
             for (int i = n - 1; i > 0; i--)
             {
-                int j = RandomNumberGenerator.GetInt32(0, i + 1);
+                byte[] bytes = new byte[4];
+                rng.GetBytes(bytes);
+                int j = Math.Abs(BitConverter.ToInt32(bytes, 0) % (i + 1));
                 int temp = numbers[i];
                 numbers[i] = numbers[j];
                 numbers[j] = temp;
@@ -160,30 +111,12 @@ public class MainActivity : Activity
             if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
             {
                 Toast.MakeText(this, "تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
-                // تغيير لون الزر العائم
-                if (floatingButton != null)
-                {
-                    floatingButton.SetBackgroundColor(Color.Red);
-                    await System.Threading.Tasks.Task.Delay(500);
-                    floatingButton.SetBackgroundColor(Color.Blue);
-                }
+                // إرسال إشارة لتغيير لون الزر العائم
+                Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
+                SendBroadcast(colorIntent);
             }
             
             await System.Threading.Tasks.Task.Delay(50);
-        }
-    }
-
-    protected override void OnDestroy()
-    {
-        base.OnDestroy();
-        // إزالة الزر العائم
-        if (floatingView != null && windowManager != null)
-        {
-            try
-            {
-                windowManager.RemoveView(floatingView);
-            }
-            catch (Exception) { }
         }
     }
 }
