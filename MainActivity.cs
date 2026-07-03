@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
-using Android.Runtime;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
