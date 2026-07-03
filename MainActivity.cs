@@ -1,88 +1,127 @@
 using Android.App;
 using Android.Widget;
 using Android.OS;
+using Android.Views;
+using Android.Graphics;
 using System.Security.Cryptography;
 using System;
 using System.Collections.Generic;
+using Android.Content;
+using Android.Provider;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
 {
     private TextView textView;
-    private Button button;
+    private Button startButton;
+    private FloatingButtonService floatingService;
+    private bool isRunning = false;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         
+        // طلب صلاحية Accessibility
+        RequestAccessibilityPermission();
+        
         // إنشاء واجهة
         LinearLayout layout = new LinearLayout(this);
         layout.Orientation = Orientation.Vertical;
         layout.SetPadding(50, 50, 50, 50);
+        layout.SetGravity(GravityFlags.Center);
         
         textView = new TextView(this);
-        textView.Text = "اضغط على الزر لتوليد 150 رقماً";
+        textView.Text = "اضغط على الزر لبدء الخلط السريع";
         textView.TextSize = 20;
-        textView.SetTextColor(Android.Graphics.Color.Black);
+        textView.SetTextColor(Color.Black);
         
-        button = new Button(this);
-        button.Text = "توليد وخلط الأرقام (1-150)";
-        button.SetTextColor(Android.Graphics.Color.White);
-        button.SetBackgroundColor(Android.Graphics.Color.Blue);
-        
-        button.Click += GenerateAndShuffleNumbers;
+        startButton = new Button(this);
+        startButton.Text = "بدء الخلط السريع";
+        startButton.SetTextColor(Color.White);
+        startButton.SetBackgroundColor(Color.Blue);
+        startButton.Click += StartShuffling;
         
         layout.AddView(textView);
-        layout.AddView(button);
+        layout.AddView(startButton);
         
         SetContentView(layout);
     }
 
-    private void GenerateAndShuffleNumbers(object sender, EventArgs e)
+    private void RequestAccessibilityPermission()
     {
-        try
+        Intent intent = new Intent(Settings.ActionAccessibilitySettings);
+        StartActivity(intent);
+        Toast.MakeText(this, "الرجاء تفعيل التطبيق في إعدادات إمكانية الوصول", ToastLength.Long).Show();
+    }
+
+    private void StartShuffling(object sender, EventArgs e)
+    {
+        if (!isRunning)
         {
-            // 1. إنشاء قائمة أرقام من 1 إلى 150
-            int count = 150;
-            List<int> numbers = new List<int>();
-            for (int i = 1; i <= count; i++)
-            {
-                numbers.Add(i);
-            }
+            isRunning = true;
+            startButton.Text = "جاري الخلط...";
             
-            // 2. خلط الأرقام باستخدام خوارزمية Fisher-Yates مع RandomNumberGenerator
-            ShuffleFisherYates(numbers);
+            // بدء خدمة الزر العائم
+            Intent serviceIntent = new Intent(this, typeof(FloatingButtonService));
+            StartService(serviceIntent);
             
-            // 3. عرض النتيجة
-            string result = "الأرقام المخلوطة (1-150):\n";
-            for (int i = 0; i < numbers.Count; i++)
-            {
-                result += numbers[i].ToString().PadLeft(3) + " ";
-                if ((i + 1) % 10 == 0) result += "\n";
-            }
-            
-            textView.Text = result;
-            Toast.MakeText(this, "تم توليد وخلط " + count + " رقم!", ToastLength.Short).Show();
-        }
-        catch (Exception ex)
-        {
-            Toast.MakeText(this, "خطأ: " + ex.Message, ToastLength.Long).Show();
+            // بدء الخلط السريع
+            StartFastShuffling();
         }
     }
 
-    // خوارزمية Fisher-Yates لخلط الأرقام باستخدام RandomNumberGenerator
+    private async void StartFastShuffling()
+    {
+        List<int> numbers = new List<int>();
+        for (int i = 1; i <= 150; i++) numbers.Add(i);
+        
+        while (isRunning)
+        {
+            // خلط سريع باستخدام Fisher-Yates
+            ShuffleFisherYates(numbers);
+            
+            // عرض أول 10 أرقام
+            string result = "الخلط السريع:\n";
+            for (int i = 0; i < Math.Min(10, numbers.Count); i++)
+            {
+                result += numbers[i] + " ";
+            }
+            textView.Text = result;
+            
+            // التحقق من الأرقام 1، 2، 3
+            if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
+            {
+                // تنفيذ نقرة على تطبيق آخر
+                PerformClickOnOtherApp(numbers[0]);
+                
+                // إيقاف الخلط مؤقتاً
+                await System.Threading.Tasks.Task.Delay(1000);
+            }
+            
+            // تأخير بسيط للسرعة
+            await System.Threading.Tasks.Task.Delay(50);
+        }
+    }
+
     private void ShuffleFisherYates(List<int> list)
     {
         int n = list.Count;
         for (int i = n - 1; i > 0; i--)
         {
-            // توليد رقم عشوائي من 0 إلى i باستخدام RandomNumberGenerator
             int j = RandomNumberGenerator.GetInt32(0, i + 1);
-            
-            // تبديل العناصر
             int temp = list[i];
             list[i] = list[j];
             list[j] = temp;
         }
+    }
+
+    private void PerformClickOnOtherApp(int number)
+    {
+        // إرسال إشارة إلى Accessibility Service
+        Intent intent = new Intent("CLICK_ACTION");
+        intent.PutExtra("number", number);
+        SendBroadcast(intent);
+        
+        Toast.MakeText(this, "تم العثور على الرقم: " + number, ToastLength.Short).Show();
     }
 }
