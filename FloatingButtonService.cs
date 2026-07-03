@@ -2,13 +2,13 @@ using Android.App;
 using Android.Widget;
 using Android.OS;
 using Android.Views;
-using Android.Graphics;
 using Android.Content;
+using Android.Graphics;
 
 [Service]
 public class FloatingButtonService : Service
 {
-    private WindowManager windowManager;
+    private Android.Views.WindowManager windowManager;
     private View floatingView;
     private Button floatingButton;
 
@@ -22,17 +22,30 @@ public class FloatingButtonService : Service
         base.OnCreate();
         
         // إنشاء الزر العائم
-        windowManager = GetSystemService(WindowService) as WindowManager;
+        windowManager = GetSystemService(Context.WindowService) as Android.Views.WindowManager;
         
-        floatingView = LayoutInflater.From(this).Inflate(Resource.Layout.floating_button, null);
-        floatingButton = floatingView.FindViewById<Button>(Resource.Id.floatingButton);
+        // إنشاء الزر برمجياً بدلاً من XML
+        floatingButton = new Button(this);
+        floatingButton.Text = "⚡";
+        floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 30);
+        floatingButton.SetBackgroundColor(Android.Graphics.Color.Blue);
+        floatingButton.SetTextColor(Android.Graphics.Color.White);
         
-        WindowManagerLayoutParams parameters = new WindowManagerLayoutParams(
+        // إنشاء Layout لاحتواء الزر
+        floatingView = new LinearLayout(this);
+        var layoutParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WrapContent,
+            LinearLayout.LayoutParams.WrapContent);
+        floatingView.LayoutParameters = layoutParams;
+        ((LinearLayout)floatingView).AddView(floatingButton);
+        
+        // إعدادات النافذة العائمة
+        var parameters = new WindowManagerLayoutParams(
             WindowManagerLayoutParams.WrapContent,
             WindowManagerLayoutParams.WrapContent,
             WindowManagerTypes.ApplicationOverlay,
             WindowManagerFlags.NotFocusable,
-            Format.Translucent
+            Android.Graphics.Format.Translucent
         );
         
         parameters.Gravity = GravityFlags.Top | GravityFlags.Right;
