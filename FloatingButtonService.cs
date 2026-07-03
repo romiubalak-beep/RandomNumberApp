@@ -9,7 +9,7 @@ using Android.Runtime;
 [Service]
 public class FloatingButtonService : Service
 {
-    private WindowManager windowManager;
+    private Android.Views.WindowManager windowManager;
     private View floatingView;
     private Button floatingButton;
     private WindowManagerLayoutParams layoutParams;
@@ -49,27 +49,27 @@ public class FloatingButtonService : Service
             floatingView = container;
             
             // الحصول على WindowManager
-            windowManager = (WindowManager)GetSystemService(WindowService);
+            windowManager = (Android.Views.WindowManager)GetSystemService(WindowService);
             
-            // إعدادات النافذة العائمة بشكل صحيح
+            // إعدادات النافذة العائمة
             int type;
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
-                type = WindowManagerTypes.ApplicationOverlay;
+                type = (int)WindowManagerTypes.ApplicationOverlay;
             }
             else
             {
-                type = WindowManagerTypes.Phone;
+                type = (int)WindowManagerTypes.Phone;
             }
             
             layoutParams = new WindowManagerLayoutParams(
                 WindowManagerLayoutParams.WrapContent,
                 WindowManagerLayoutParams.WrapContent,
                 type,
-                WindowManagerFlags.NotFocusable,
+                (int)WindowManagerFlags.NotFocusable,
                 Format.Translucent);
             
-            layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
+            layoutParams.Gravity = (int)GravityFlags.Top | (int)GravityFlags.Right;
             layoutParams.X = 0;
             layoutParams.Y = 200;
             
