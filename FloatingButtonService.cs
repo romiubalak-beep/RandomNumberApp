@@ -9,7 +9,7 @@ using Android.Runtime;
 [Service]
 public class FloatingButtonService : Service
 {
-    private IWindowManager windowManager;
+    private WindowManager windowManager;
     private View floatingView;
     private Button floatingButton;
     private bool isRed = false;
@@ -45,19 +45,19 @@ public class FloatingButtonService : Service
             floatingView = container;
             
             // الحصول على WindowManager
-            windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
+            windowManager = (WindowManager)GetSystemService(WindowService);
             
             // إعدادات النافذة العائمة
-            var parameters = new WindowManagerLayoutParams(
-                ViewGroup.LayoutParams.WrapContent,
-                ViewGroup.LayoutParams.WrapContent,
+            WindowManagerLayoutParams parameters = new WindowManagerLayoutParams(
+                WindowManagerLayoutParams.WrapContent,
+                WindowManagerLayoutParams.WrapContent,
                 WindowManagerTypes.ApplicationOverlay,
                 WindowManagerFlags.NotFocusable,
                 Format.Translucent);
             
             parameters.Gravity = GravityFlags.Top | GravityFlags.Right;
             parameters.X = 0;
-            parameters.Y = 200;
+            parameters.Y = 100;
             
             // إضافة الزر
             windowManager.AddView(floatingView, parameters);
