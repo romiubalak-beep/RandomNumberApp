@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
-using Android.Runtime;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -16,19 +15,28 @@ public class MainActivity : Activity
     private TextView textView;
     private Button startButton;
     private bool isRunning = false;
-    private WindowManagerLayoutParams floatingParams;
     private View floatingView;
-    private WindowManager windowManager;
     private Button floatingButton;
+    private WindowManager windowManager;
+    private WindowManagerLayoutParams layoutParams;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         
         // طلب صلاحية العرض فوق التطبيقات
-        RequestOverlayPermission();
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
+        {
+            if (!Settings.CanDrawOverlays(this))
+            {
+                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
+                    Android.Net.Uri.Parse("package:" + PackageName));
+                StartActivity(intent);
+                Toast.MakeText(this, "الرجاء تفعيل صلاحية العرض فوق التطبيقات", ToastLength.Long).Show();
+            }
+        }
         
-        // إنشاء واجهة
+        // إنشاء واجهة التطبيق الرئيسية
         LinearLayout layout = new LinearLayout(this);
         layout.Orientation = Orientation.Vertical;
         layout.SetPadding(50, 50, 50, 50);
@@ -50,74 +58,54 @@ public class MainActivity : Activity
         
         SetContentView(layout);
         
-        // إنشاء الزر العائم
+        // إنشاء الزر العائم بعد التحميل
         CreateFloatingButton();
-    }
-
-    private void RequestOverlayPermission()
-    {
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
-        {
-            if (!Settings.CanDrawOverlays(this))
-            {
-                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
-                    Android.Net.Uri.Parse("package:" + PackageName));
-                StartActivity(intent);
-                Toast.MakeText(this, "الرجاء تفعيل صلاحية العرض فوق التطبيقات", ToastLength.Long).Show();
-            }
-        }
     }
 
     private void CreateFloatingButton()
     {
-        // إنشاء الزر العائم
-        floatingButton = new Button(this);
-        floatingButton.Text = "⚡";
-        floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 30);
-        floatingButton.SetBackgroundColor(Color.Blue);
-        floatingButton.SetTextColor(Color.White);
-        floatingButton.Click += FloatingButton_Click;
-        
-        // إنشاء Layout للزر
-        floatingView = new LinearLayout(this);
-        var layoutParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WrapContent,
-            LinearLayout.LayoutParams.WrapContent);
-        floatingView.LayoutParameters = layoutParams;
-        ((LinearLayout)floatingView).AddView(floatingButton);
-        
-        // إعدادات النافذة العائمة
-        windowManager = GetSystemService(Context.WindowService).JavaCast<WindowManager>();
-        
-        floatingParams = new WindowManagerLayoutParams(
-            WindowManagerLayoutParams.WrapContent,
-            WindowManagerLayoutParams.WrapContent,
-            Build.VERSION.SdkInt >= BuildVersionCodes.O
-                ? WindowManagerTypes.ApplicationOverlay
-                : WindowManagerTypes.Phone,
-            WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
-            Android.Graphics.Format.Translucent
-        );
-        
-        floatingParams.Gravity = GravityFlags.Top | GravityFlags.Right;
-        floatingParams.X = 0;
-        floatingParams.Y = 200;
-        
-        // إضافة الزر إلى النافذة
         try
         {
-            windowManager.AddView(floatingView, floatingParams);
+            // إنشاء الزر العائم
+            floatingButton = new Button(this);
+            floatingButton.Text = "⚡";
+            floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 30);
+            floatingButton.SetBackgroundColor(Color.Blue);
+            floatingButton.SetTextColor(Color.White);
+            
+            // إنشاء Layout بسيط للزر
+            LinearLayout container = new LinearLayout(this);
+            container.AddView(floatingButton);
+            floatingView = container;
+            
+            // إعدادات النافذة العائمة
+            int type = Build.VERSION.SdkInt >= BuildVersionCodes.O
+                ? WindowManagerTypes.ApplicationOverlay
+                : WindowManagerTypes.Phone;
+            
+            layoutParams = new WindowManagerLayoutParams(
+                WindowManagerLayoutParams.WrapContent,
+                WindowManagerLayoutParams.WrapContent,
+                type,
+                WindowManagerFlags.NotFocusable,
+                Format.Translucent);
+            
+            layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
+            layoutParams.X = 0;
+            layoutParams.Y = 200;
+            
+            // الحصول على WindowManager
+            windowManager = (WindowManager)GetSystemService(WindowService);
+            
+            // إضافة الزر
+            windowManager.AddView(floatingView, layoutParams);
+            
+            Toast.MakeText(this, "تم إنشاء الزر العائم", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
-            Toast.MakeText(this, "خطأ في إضافة الزر العائم: " + ex.Message, ToastLength.Long).Show();
+            Toast.MakeText(this, "خطأ في الزر العائم: " + ex.Message, ToastLength.Long).Show();
         }
-    }
-
-    private void FloatingButton_Click(object sender, EventArgs e)
-    {
-        Toast.MakeText(this, "الزر العائم يعمل!", ToastLength.Short).Show();
-        // هنا سنضيف لاحقاً وظيفة النقر على التطبيق الآخر
     }
 
     private void StartShuffling(object sender, EventArgs e)
@@ -140,17 +128,14 @@ public class MainActivity : Activity
     {
         List<int> numbers = new List<int>();
         for (int i = 1; i <= 150; i++) numbers.Add(i);
-        RandomNumberGenerator rng = RandomNumberGenerator.Create();
         
         while (isRunning)
         {
-            // خلط سريع باستخدام Fisher-Yates
+            // خلط باستخدام Fisher-Yates مع RandomNumberGenerator
             int n = numbers.Count;
             for (int i = n - 1; i > 0; i--)
             {
-                byte[] bytes = new byte[4];
-                rng.GetBytes(bytes);
-                int j = Math.Abs(BitConverter.ToInt32(bytes, 0) % (i + 1));
+                int j = RandomNumberGenerator.GetInt32(0, i + 1);
                 int temp = numbers[i];
                 numbers[i] = numbers[j];
                 numbers[j] = temp;
@@ -168,11 +153,13 @@ public class MainActivity : Activity
             if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
             {
                 Toast.MakeText(this, "تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
-                // تحديث لون الزر العائم
-                floatingButton.SetBackgroundColor(Color.Red);
-                await System.Threading.Tasks.Task.Delay(500);
-                floatingButton.SetBackgroundColor(Color.Blue);
-                await System.Threading.Tasks.Task.Delay(1000);
+                // تغيير لون الزر العائم
+                if (floatingButton != null)
+                {
+                    floatingButton.SetBackgroundColor(Color.Red);
+                    await System.Threading.Tasks.Task.Delay(500);
+                    floatingButton.SetBackgroundColor(Color.Blue);
+                }
             }
             
             await System.Threading.Tasks.Task.Delay(50);
@@ -182,7 +169,7 @@ public class MainActivity : Activity
     protected override void OnDestroy()
     {
         base.OnDestroy();
-        // إزالة الزر العائم عند إغلاق التطبيق
+        // إزالة الزر العائم
         if (floatingView != null && windowManager != null)
         {
             try
