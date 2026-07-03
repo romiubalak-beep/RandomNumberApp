@@ -10,7 +10,7 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         
-        // إنشاء واجهة بسيطة جداً
+        // إنشاء واجهة بسيطة
         LinearLayout layout = new LinearLayout(this);
         layout.Orientation = Orientation.Vertical;
         layout.SetPadding(50, 50, 50, 50);
@@ -18,13 +18,12 @@ public class MainActivity : Activity
         TextView textView = new TextView(this);
         textView.Text = "اضغط على الزر";
         textView.TextSize = 30;
-        textView.SetTextColor(Android.Graphics.Color.Black);
         
         Button button = new Button(this);
         button.Text = "توليد رقم عشوائي";
-        button.SetTextColor(Android.Graphics.Color.White);
         
-        button.Click += delegate
+        // حدث الضغط - استخدم هذا النمط
+        button.Click += (object sender, System.EventArgs e) =>
         {
             int num = RandomNumberGenerator.GetInt32(1, 101);
             textView.Text = "الرقم: " + num;
