@@ -20,9 +20,6 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         
-        // طلب صلاحية Accessibility
-        RequestAccessibilityPermission();
-        
         // إنشاء واجهة
         LinearLayout layout = new LinearLayout(this);
         layout.Orientation = Orientation.Vertical;
@@ -46,25 +43,12 @@ public class MainActivity : Activity
         SetContentView(layout);
     }
 
-    private void RequestAccessibilityPermission()
-    {
-        Intent intent = new Intent(Settings.ActionAccessibilitySettings);
-        StartActivity(intent);
-        Toast.MakeText(this, "الرجاء تفعيل التطبيق في إعدادات إمكانية الوصول", ToastLength.Long).Show();
-    }
-
     private void StartShuffling(object sender, EventArgs e)
     {
         if (!isRunning)
         {
             isRunning = true;
             startButton.Text = "جاري الخلط...";
-            
-            // بدء خدمة الزر العائم
-            Intent serviceIntent = new Intent(this, typeof(FloatingButtonService));
-            StartService(serviceIntent);
-            
-            // بدء الخلط السريع
             StartFastShuffling();
         }
     }
@@ -90,10 +74,7 @@ public class MainActivity : Activity
             // التحقق من الأرقام 1، 2، 3
             if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
             {
-                // تنفيذ نقرة على تطبيق آخر
-                PerformClickOnOtherApp(numbers[0]);
-                
-                // إيقاف الخلط مؤقتاً
+                Toast.MakeText(this, "تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
                 await System.Threading.Tasks.Task.Delay(1000);
             }
             
@@ -112,15 +93,5 @@ public class MainActivity : Activity
             list[i] = list[j];
             list[j] = temp;
         }
-    }
-
-    private void PerformClickOnOtherApp(int number)
-    {
-        // إرسال إشارة إلى Accessibility Service
-        Intent intent = new Intent("CLICK_ACTION");
-        intent.PutExtra("number", number);
-        SendBroadcast(intent);
-        
-        Toast.MakeText(this, "تم العثور على الرقم: " + number, ToastLength.Short).Show();
     }
 }
