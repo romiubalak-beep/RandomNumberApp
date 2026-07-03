@@ -51,25 +51,25 @@ public class FloatingButtonService : Service
             // الحصول على WindowManager
             windowManager = (WindowManager)GetSystemService(WindowService);
             
-            // إعدادات النافذة العائمة
+            // إعدادات النافذة العائمة بشكل صحيح
             int type;
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
-                type = (int)WindowManagerTypes.ApplicationOverlay;
+                type = WindowManagerTypes.ApplicationOverlay;
             }
             else
             {
-                type = (int)WindowManagerTypes.Phone;
+                type = WindowManagerTypes.Phone;
             }
             
             layoutParams = new WindowManagerLayoutParams(
                 WindowManagerLayoutParams.WrapContent,
                 WindowManagerLayoutParams.WrapContent,
                 type,
-                (int)WindowManagerFlags.NotFocusable,
+                WindowManagerFlags.NotFocusable,
                 Format.Translucent);
             
-            layoutParams.Gravity = (int)GravityFlags.Top | (int)GravityFlags.Right;
+            layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
             layoutParams.X = 0;
             layoutParams.Y = 200;
             
