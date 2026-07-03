@@ -18,23 +18,23 @@ public class MyAccessibilityService : AccessibilityService
         // مقاطعة
     }
 
-    [Java.Interop.Export]
     public void PerformClick(int x, int y)
     {
         // محاكاة نقرة في منتصف الشاشة
         handler.Post(() =>
         {
             // الحصول على إحداثيات منتصف الشاشة
-            Display display = (Display)GetSystemService(Context.WindowService);
-            Point size = new Point();
+            var display = (Display)GetSystemService(Context.WindowService);
+            var size = new Point();
             display.GetSize(size);
             int centerX = size.X / 2;
             int centerY = size.Y / 2;
             
             // تنفيذ النقرة
-            GestureDescription.Builder builder = new GestureDescription.Builder();
-            builder.AddStroke(new GestureDescription.StrokeDescription(
-                new Path(centerX, centerY), 0, 100));
+            var builder = new GestureDescription.Builder();
+            var path = new Path();
+            path.MoveTo(centerX, centerY);
+            builder.AddStroke(new GestureDescription.StrokeDescription(path, 0, 100));
             
             DispatchGesture(builder.Build(), null, null);
         });
