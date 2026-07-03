@@ -22,10 +22,15 @@ public class MainActivity : Activity
         Button button = new Button(this);
         button.Text = "توليد رقم عشوائي";
         
+        // إنشاء كائن RandomNumberGenerator مرة واحدة
+        RandomNumberGenerator rng = RandomNumberGenerator.Create();
+        
         button.Click += (object sender, System.EventArgs e) =>
         {
-            // استخدام RandomNumberGenerator.GetInt32() حصرياً
-            int num = RandomNumberGenerator.GetInt32(1, 101);
+            // استخدام RandomNumberGenerator
+            byte[] bytes = new byte[4];
+            rng.GetBytes(bytes);
+            int num = Math.Abs(BitConverter.ToInt32(bytes, 0) % 100) + 1;
             textView.Text = "الرقم: " + num;
         };
         
