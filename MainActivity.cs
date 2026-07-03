@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
+using Android.Runtime;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -17,7 +18,7 @@ public class MainActivity : Activity
     private bool isRunning = false;
     private View floatingView;
     private Button floatingButton;
-    private WindowManager windowManager;
+    private Android.Views.WindowManager windowManager;
     private WindowManagerLayoutParams layoutParams;
 
     protected override void OnCreate(Bundle savedInstanceState)
@@ -79,23 +80,29 @@ public class MainActivity : Activity
             floatingView = container;
             
             // إعدادات النافذة العائمة
-            int type = Build.VERSION.SdkInt >= BuildVersionCodes.O
-                ? WindowManagerTypes.ApplicationOverlay
-                : WindowManagerTypes.Phone;
+            int type;
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+            {
+                type = (int)WindowManagerTypes.ApplicationOverlay;
+            }
+            else
+            {
+                type = (int)WindowManagerTypes.Phone;
+            }
             
             layoutParams = new WindowManagerLayoutParams(
                 WindowManagerLayoutParams.WrapContent,
                 WindowManagerLayoutParams.WrapContent,
                 type,
-                WindowManagerFlags.NotFocusable,
+                (int)WindowManagerFlags.NotFocusable,
                 Format.Translucent);
             
-            layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
+            layoutParams.Gravity = (int)GravityFlags.Top | (int)GravityFlags.Right;
             layoutParams.X = 0;
             layoutParams.Y = 200;
             
             // الحصول على WindowManager
-            windowManager = (WindowManager)GetSystemService(WindowService);
+            windowManager = (Android.Views.WindowManager)GetSystemService(WindowService);
             
             // إضافة الزر
             windowManager.AddView(floatingView, layoutParams);
