@@ -6,6 +6,9 @@ using System.Security.Cryptography;
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
 {
+    private TextView textView;
+    private Button button;
+
     protected override void OnCreate(Bundle savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
@@ -15,28 +18,43 @@ public class MainActivity : Activity
         layout.Orientation = Orientation.Vertical;
         layout.SetPadding(50, 50, 50, 50);
         
-        TextView textView = new TextView(this);
+        textView = new TextView(this);
         textView.Text = "اضغط على الزر";
         textView.TextSize = 30;
         
-        Button button = new Button(this);
+        button = new Button(this);
         button.Text = "توليد رقم عشوائي";
         
-        // إنشاء كائن RandomNumberGenerator مرة واحدة
-        RandomNumberGenerator rng = RandomNumberGenerator.Create();
-        
-        button.Click += (object sender, System.EventArgs e) =>
-        {
-            // استخدام RandomNumberGenerator
-            byte[] bytes = new byte[4];
-            rng.GetBytes(bytes);
-            int num = Math.Abs(BitConverter.ToInt32(bytes, 0) % 100) + 1;
-            textView.Text = "الرقم: " + num;
-        };
+        button.Click += Button_Click;
         
         layout.AddView(textView);
         layout.AddView(button);
         
         SetContentView(layout);
+    }
+
+    private void Button_Click(object sender, System.EventArgs e)
+    {
+        try
+        {
+            // استخدام RandomNumberGenerator
+            int randomNumber = GetRandomNumber(1, 101);
+            textView.Text = "الرقم: " + randomNumber;
+        }
+        catch (System.Exception ex)
+        {
+            textView.Text = "خطأ: " + ex.Message;
+        }
+    }
+
+    private int GetRandomNumber(int min, int max)
+    {
+        using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+        {
+            byte[] data = new byte[4];
+            rng.GetBytes(data);
+            int value = System.BitConverter.ToInt32(data, 0);
+            return System.Math.Abs(value % (max - min)) + min;
+        }
     }
 }
