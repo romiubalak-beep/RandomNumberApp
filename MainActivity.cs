@@ -22,11 +22,11 @@ public class MainActivity : Activity
         
         textView = new TextView(this);
         textView.Text = "اضغط على الزر لتوليد 150 رقماً";
-        textView.TextSize = 24;
+        textView.TextSize = 20;
         textView.SetTextColor(Android.Graphics.Color.Black);
         
         button = new Button(this);
-        button.Text = "توليد وخلط الأرقام";
+        button.Text = "توليد وخلط الأرقام (1-150)";
         button.SetTextColor(Android.Graphics.Color.White);
         button.SetBackgroundColor(Android.Graphics.Color.Blue);
         
@@ -42,23 +42,22 @@ public class MainActivity : Activity
     {
         try
         {
-            // 1. توليد 150 رقماً عشوائياً باستخدام RandomNumberGenerator.GetInt32()
+            // 1. إنشاء قائمة أرقام من 1 إلى 150
             int count = 150;
-            int[] numbers = new int[count];
-            
-            for (int i = 0; i < count; i++)
+            List<int> numbers = new List<int>();
+            for (int i = 1; i <= count; i++)
             {
-                numbers[i] = RandomNumberGenerator.GetInt32(1, 1001); // أرقام من 1 إلى 1000
+                numbers.Add(i);
             }
             
-            // 2. خلط الأرقام باستخدام خوارزمية Fisher-Yates
+            // 2. خلط الأرقام باستخدام خوارزمية Fisher-Yates مع RandomNumberGenerator
             ShuffleFisherYates(numbers);
             
             // 3. عرض النتيجة
-            string result = "الأرقام بعد الخلط:\n";
-            for (int i = 0; i < Math.Min(count, 50); i++) // عرض أول 50 رقم فقط
+            string result = "الأرقام المخلوطة (1-150):\n";
+            for (int i = 0; i < numbers.Count; i++)
             {
-                result += numbers[i] + " ";
+                result += numbers[i].ToString().PadLeft(3) + " ";
                 if ((i + 1) % 10 == 0) result += "\n";
             }
             
@@ -71,19 +70,19 @@ public class MainActivity : Activity
         }
     }
 
-    // خوارزمية Fisher-Yates لخلط الأرقام
-    private void ShuffleFisherYates(int[] array)
+    // خوارزمية Fisher-Yates لخلط الأرقام باستخدام RandomNumberGenerator
+    private void ShuffleFisherYates(List<int> list)
     {
-        int n = array.Length;
+        int n = list.Count;
         for (int i = n - 1; i > 0; i--)
         {
             // توليد رقم عشوائي من 0 إلى i باستخدام RandomNumberGenerator
             int j = RandomNumberGenerator.GetInt32(0, i + 1);
             
             // تبديل العناصر
-            int temp = array[i];
-            array[i] = array[j];
-            array[j] = temp;
+            int temp = list[i];
+            list[i] = list[j];
+            list[j] = temp;
         }
     }
 }
