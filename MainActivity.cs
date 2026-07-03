@@ -51,17 +51,33 @@ public class MainActivity : Activity
             startButton.Text = "جاري الخلط...";
             StartFastShuffling();
         }
+        else
+        {
+            isRunning = false;
+            startButton.Text = "بدء الخلط السريع";
+            textView.Text = "تم إيقاف الخلط";
+        }
     }
 
     private async void StartFastShuffling()
     {
         List<int> numbers = new List<int>();
         for (int i = 1; i <= 150; i++) numbers.Add(i);
+        RandomNumberGenerator rng = RandomNumberGenerator.Create();
         
         while (isRunning)
         {
             // خلط سريع باستخدام Fisher-Yates
-            ShuffleFisherYates(numbers);
+            int n = numbers.Count;
+            for (int i = n - 1; i > 0; i--)
+            {
+                byte[] bytes = new byte[4];
+                rng.GetBytes(bytes);
+                int j = Math.Abs(BitConverter.ToInt32(bytes, 0) % (i + 1));
+                int temp = numbers[i];
+                numbers[i] = numbers[j];
+                numbers[j] = temp;
+            }
             
             // عرض أول 10 أرقام
             string result = "الخلط السريع:\n";
@@ -80,18 +96,6 @@ public class MainActivity : Activity
             
             // تأخير بسيط للسرعة
             await System.Threading.Tasks.Task.Delay(50);
-        }
-    }
-
-    private void ShuffleFisherYates(List<int> list)
-    {
-        int n = list.Count;
-        for (int i = n - 1; i > 0; i--)
-        {
-            int j = RandomNumberGenerator.GetInt32(0, i + 1);
-            int temp = list[i];
-            list[i] = list[j];
-            list[j] = temp;
         }
     }
 }
