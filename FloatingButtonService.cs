@@ -12,7 +12,6 @@ public class FloatingButtonService : Service
     private Android.Views.WindowManager windowManager;
     private View floatingView;
     private Button floatingButton;
-    private WindowManagerLayoutParams layoutParams;
     private bool isRed = false;
 
     public override IBinder OnBind(Intent intent)
@@ -23,11 +22,8 @@ public class FloatingButtonService : Service
     public override void OnCreate()
     {
         base.OnCreate();
-        
-        // إنشاء الزر العائم
         CreateFloatingButton();
         
-        // استقبال الإشارات لتغيير اللون
         IntentFilter filter = new IntentFilter("CHANGE_FLOATING_BUTTON_COLOR");
         RegisterReceiver(receiver, filter);
     }
@@ -49,36 +45,27 @@ public class FloatingButtonService : Service
             floatingView = container;
             
             // الحصول على WindowManager
-            windowManager = (Android.Views.WindowManager)GetSystemService(WindowService);
+            windowManager = GetSystemService(WindowService).JavaCast<Android.Views.WindowManager>();
             
             // إعدادات النافذة العائمة
-            int type;
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-            {
-                type = (int)WindowManagerTypes.ApplicationOverlay;
-            }
-            else
-            {
-                type = (int)WindowManagerTypes.Phone;
-            }
+            var type = WindowManagerTypes.ApplicationOverlay;
             
-            layoutParams = new WindowManagerLayoutParams(
-                WindowManagerLayoutParams.WrapContent,
-                WindowManagerLayoutParams.WrapContent,
+            var parameters = new WindowManagerLayoutParams(
+                ViewGroup.LayoutParams.WrapContent,
+                ViewGroup.LayoutParams.WrapContent,
                 type,
-                (int)WindowManagerFlags.NotFocusable,
+                WindowManagerFlags.NotFocusable,
                 Format.Translucent);
             
-            layoutParams.Gravity = (int)GravityFlags.Top | (int)GravityFlags.Right;
-            layoutParams.X = 0;
-            layoutParams.Y = 200;
+            parameters.Gravity = GravityFlags.Top | GravityFlags.Right;
+            parameters.X = 0;
+            parameters.Y = 200;
             
             // إضافة الزر
-            windowManager.AddView(floatingView, layoutParams);
+            windowManager.AddView(floatingView, parameters);
         }
         catch (Exception ex)
         {
-            // تسجيل الخطأ
             Android.Util.Log.Error("FloatingService", ex.Message);
         }
     }
