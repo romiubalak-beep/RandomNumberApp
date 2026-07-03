@@ -22,9 +22,9 @@ public class MainActivity : Activity
         Button button = new Button(this);
         button.Text = "توليد رقم عشوائي";
         
-        // حدث الضغط - استخدم هذا النمط
         button.Click += (object sender, System.EventArgs e) =>
         {
+            // استخدام RandomNumberGenerator.GetInt32() حصرياً
             int num = RandomNumberGenerator.GetInt32(1, 101);
             textView.Text = "الرقم: " + num;
         };
