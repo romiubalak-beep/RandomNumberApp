@@ -1,20 +1,17 @@
 using Android.App;
 using Android.Widget;
 using Android.OS;
+using System.Security.Cryptography;
 using System;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
 {
     private TextView textView;
-    private Random random;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
-        
-        // إنشاء Random
-        random = new Random();
         
         // إنشاء واجهة
         LinearLayout layout = new LinearLayout(this);
@@ -43,10 +40,10 @@ public class MainActivity : Activity
     {
         try
         {
-            int num = random.Next(1, 101);
-            string result = "الرقم: " + num;
-            textView.Text = result;
-            Toast.MakeText(this, result, ToastLength.Short).Show();
+            // ✅ استخدام RandomNumberGenerator.GetInt32() حصرياً
+            int num = RandomNumberGenerator.GetInt32(1, 101);
+            textView.Text = "الرقم: " + num;
+            Toast.MakeText(this, "الرقم: " + num, ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
