@@ -14,7 +14,6 @@ public class MainActivity : Activity
 {
     private TextView textView;
     private Button startButton;
-    private FloatingButtonService floatingService;
     private bool isRunning = false;
 
     protected override void OnCreate(Bundle savedInstanceState)
