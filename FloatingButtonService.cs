@@ -16,6 +16,7 @@ public class FloatingButtonService : Service
     private bool isRed = false;
     private bool isCreated = false;
     private BroadcastReceiver receiver;
+    private bool isShuffling = false;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -26,19 +27,15 @@ public class FloatingButtonService : Service
     {
         base.OnCreate();
         
-        // تأخير إنشاء الزر العائم
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(() => {
             CreateFloatingButton();
         }, 2000);
         
-        // إنشاء الـ BroadcastReceiver مع تحديد EXPORTED
         receiver = new FloatingButtonReceiver();
-        
         IntentFilter filter = new IntentFilter("CHANGE_FLOATING_BUTTON_COLOR");
         
-        // ✅ الحل: استخدام RegisterReceiver مع RECEIVER_NOT_EXPORTED
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu) // Android 13+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
             RegisterReceiver(receiver, filter, ReceiverFlags.NotExported);
         }
@@ -52,7 +49,6 @@ public class FloatingButtonService : Service
     {
         try
         {
-            // التحقق من صلاحية العرض فوق التطبيقات
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
                 if (!Settings.CanDrawOverlays(this))
@@ -65,24 +61,41 @@ public class FloatingButtonService : Service
                 }
             }
 
-            // إنشاء الزر
+            // إنشاء الزر بحجم أصغر
             floatingButton = new Button(this);
-            floatingButton.Text = "⚡";
-            floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 30);
+            floatingButton.Text = "▶";
+            floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 18);
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // إضافة حدث للزر
+            // ✅ وظيفة الزر: تشغيل/إيقاف الخلط
             floatingButton.Click += (s, e) => {
-                Toast.MakeText(this, "الزر العائم يعمل!", ToastLength.Short).Show();
+                isShuffling = !isShuffling;
+                if (isShuffling)
+                {
+                    floatingButton.Text = "⏹";
+                    floatingButton.SetBackgroundColor(Color.Green);
+                    Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+                    // إرسال إشارة بدء الخلط
+                    Intent startIntent = new Intent("START_SHUFFLING");
+                    SendBroadcast(startIntent);
+                }
+                else
+                {
+                    floatingButton.Text = "▶";
+                    floatingButton.SetBackgroundColor(Color.Blue);
+                    Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+                    // إرسال إشارة إيقاف الخلط
+                    Intent stopIntent = new Intent("STOP_SHUFFLING");
+                    SendBroadcast(stopIntent);
+                }
             };
             
-            // إنشاء Layout للزر
+            // تصغير حجم الزر
             LinearLayout container = new LinearLayout(this);
             container.AddView(floatingButton);
             floatingView = container;
             
-            // الحصول على WindowManager
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             
             if (windowManager == null)
@@ -91,7 +104,6 @@ public class FloatingButtonService : Service
                 return;
             }
 
-            // تحديد نوع النافذة حسب إصدار Android
             WindowManagerTypes windowType;
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
@@ -102,10 +114,9 @@ public class FloatingButtonService : Service
                 windowType = WindowManagerTypes.Phone;
             }
             
-            // إعدادات النافذة العائمة
             var layoutParams = new WindowManagerLayoutParams(
-                ViewGroup.LayoutParams.WrapContent,
-                ViewGroup.LayoutParams.WrapContent,
+                140, // عرض أصغر
+                140, // ارتفاع أصغر
                 windowType,
                 WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
                 Format.Translucent);
@@ -114,16 +125,14 @@ public class FloatingButtonService : Service
             layoutParams.X = 0;
             layoutParams.Y = 100;
             
-            // إضافة الزر
             windowManager.AddView(floatingView, layoutParams);
             isCreated = true;
-            Toast.MakeText(this, "✅ تم إنشاء الزر العائم", ToastLength.Short).Show();
+            Toast.MakeText(this, "✅ الزر العائم جاهز", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
             Toast.MakeText(this, "❌ خطأ: " + ex.Message, ToastLength.Long).Show();
             Android.Util.Log.Error("FloatingService", "Create Error: " + ex.Message);
-            Android.Util.Log.Error("FloatingService", ex.StackTrace);
         }
     }
 
