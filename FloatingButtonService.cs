@@ -76,7 +76,6 @@ public class FloatingButtonService : Service
                     floatingButton.Text = "⏹";
                     floatingButton.SetBackgroundColor(Color.Green);
                     Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-                    // إرسال إشارة بدء الخلط
                     Intent startIntent = new Intent("START_SHUFFLING");
                     SendBroadcast(startIntent);
                 }
@@ -85,7 +84,6 @@ public class FloatingButtonService : Service
                     floatingButton.Text = "▶";
                     floatingButton.SetBackgroundColor(Color.Blue);
                     Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-                    // إرسال إشارة إيقاف الخلط
                     Intent stopIntent = new Intent("STOP_SHUFFLING");
                     SendBroadcast(stopIntent);
                 }
