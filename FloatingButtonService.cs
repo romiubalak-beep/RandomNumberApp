@@ -5,6 +5,7 @@ using Android.Views;
 using Android.Graphics;
 using Android.Content;
 using Android.Runtime;
+using Android.Provider;
 
 [Service]
 public class FloatingButtonService : Service
@@ -23,7 +24,7 @@ public class FloatingButtonService : Service
     {
         base.OnCreate();
         
-        // تأخير إنشاء الزر العائم لضمان اكتمال الإعدادات
+        // تأخير إنشاء الزر العائم
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(() => {
             CreateFloatingButton();
@@ -38,14 +39,16 @@ public class FloatingButtonService : Service
         try
         {
             // التحقق من صلاحية العرض فوق التطبيقات
-            if (!Settings.CanDrawOverlays(this))
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
-                // إذا لم تكن الصلاحية مفعلة، اطلب تفعيلها
-                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
-                    Android.Net.Uri.Parse("package:" + PackageName));
-                intent.AddFlags(ActivityFlags.NewTask);
-                StartActivity(intent);
-                return;
+                if (!Settings.CanDrawOverlays(this))
+                {
+                    Intent intent = new Intent(Settings.ActionManageOverlayPermission,
+                        Android.Net.Uri.Parse("package:" + PackageName));
+                    intent.AddFlags(ActivityFlags.NewTask);
+                    StartActivity(intent);
+                    return;
+                }
             }
 
             // إنشاء الزر
@@ -98,7 +101,6 @@ public class FloatingButtonService : Service
         }
         catch (Exception ex)
         {
-            // عرض الخطأ للمستخدم
             Toast.MakeText(this, "خطأ: " + ex.Message, ToastLength.Long).Show();
             Android.Util.Log.Error("FloatingService", ex.Message);
             Android.Util.Log.Error("FloatingService", ex.StackTrace);
