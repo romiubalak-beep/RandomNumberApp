@@ -19,6 +19,8 @@
             </intent-filter>
         </activity>
         
-        <service android:name=".FloatingButtonService" />
+        <service 
+            android:name=".FloatingButtonService"
+            android:stopWithTask="true" />
     </application>
 </manifest>
