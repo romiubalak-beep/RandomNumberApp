@@ -6,7 +6,6 @@ using Android.Graphics;
 using Android.Content;
 using Android.Runtime;
 using Android.Provider;
-using Android.AccessibilityServices;
 
 [Service]
 public class FloatingButtonService : Service
