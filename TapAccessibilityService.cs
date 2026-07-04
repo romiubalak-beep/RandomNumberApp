@@ -3,6 +3,7 @@ using Android.AccessibilityServices;
 using Android.Views;
 using Android.Content;
 using Android.OS;
+using Android.Runtime;
 
 [Service(Permission = "android.permission.BIND_ACCESSIBILITY_SERVICE")]
 public class TapAccessibilityService : AccessibilityService
@@ -24,16 +25,23 @@ public class TapAccessibilityService : AccessibilityService
     {
         handler.Post(() =>
         {
-            // إنشاء مسار النقرة
-            var path = new Path();
-            path.MoveTo(x, y);
-            
-            // إنشاء وصف النقرة
-            var builder = new GestureDescription.Builder();
-            builder.AddStroke(new GestureDescription.StrokeDescription(path, 0, 1));
-            
-            // تنفيذ النقرة
-            DispatchGesture(builder.Build(), null, null);
+            try
+            {
+                // إنشاء مسار النقرة
+                var path = new Path();
+                path.MoveTo(x, y);
+                
+                // إنشاء وصف النقرة
+                var builder = new GestureDescription.Builder();
+                builder.AddStroke(new GestureDescription.StrokeDescription(path, 0, 1));
+                
+                // تنفيذ النقرة
+                DispatchGesture(builder.Build(), null, null);
+            }
+            catch (Exception ex)
+            {
+                Android.Util.Log.Error("TapService", "Tap Error: " + ex.Message);
+            }
         });
     }
 }
