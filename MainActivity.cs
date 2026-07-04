@@ -15,11 +15,11 @@ public class MainActivity : Activity
     private TextView textView;
     private Button startButton;
     private bool isRunning = false;
-    private bool stopOnNextFound = false;
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
-    private AccessibilityService accessibilityService;
+    private BroadcastReceiver clickReceiver;
+    private FloatingButtonService floatingService;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -91,7 +91,6 @@ public class MainActivity : Activity
                 if (!activity.isRunning)
                 {
                     activity.isRunning = true;
-                    activity.stopOnNextFound = false;
                     activity.startButton.Text = "⏹ إيقاف الخلط";
                     activity.cancellationToken = new System.Threading.CancellationTokenSource();
                     activity.StartFastShuffling(activity.cancellationToken.Token);
@@ -129,7 +128,6 @@ public class MainActivity : Activity
         if (!isRunning)
         {
             isRunning = true;
-            stopOnNextFound = false;
             startButton.Text = "⏹ إيقاف الخلط";
             cancellationToken = new System.Threading.CancellationTokenSource();
             StartFastShuffling(cancellationToken.Token);
@@ -152,6 +150,7 @@ public class MainActivity : Activity
         {
             while (isRunning && !token.IsCancellationRequested)
             {
+                // خلط Fisher-Yates
                 int n = numbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
@@ -170,47 +169,36 @@ public class MainActivity : Activity
                 }
                 textView.Text = result;
                 
-                // ✅ التحقق من الرقم المستهدف (1، 2، 3)
+                // ✅ التحقق من الرقم المستهدف (1, 2, 3)
                 if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
                 {
                     RunOnUiThread(() => {
                         Toast.MakeText(this, "🎯 تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
-                    });
-                    
-                    // ✅ تغيير لون الزر العائم
-                    try
-                    {
+                        // تغيير لون الزر العائم
                         Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
                         SendBroadcast(colorIntent);
-                    }
-                    catch (Exception ex)
-                    {
-                        Android.Util.Log.Error("MainActivity", "Broadcast Error: " + ex.Message);
-                    }
+                    });
                     
-                    // ✅ النقر على منتصف الشاشة (محاكاة نقرة)
-                    PerformClickInCenter();
+                    // ✅ إيقاف الخلط مؤقتاً
+                    isRunning = false;
+                    RunOnUiThread(() => {
+                        startButton.Text = "▶ بدء الخلط";
+                        textView.Text = "⏸ توقف مؤقت: تم العثور على " + numbers[0];
+                    });
                     
-                    // ✅ إيقاف الخلط بعد 1 ثانية
-                    stopOnNextFound = true;
+                    // ✅ محاكاة نقرة في منتصف الشاشة
+                    PerformTapOnCenter();
+                    
+                    // ✅ انتظار ثانية ثم استئناف الخلط
                     await System.Threading.Tasks.Task.Delay(1000);
                     
-                    if (stopOnNextFound && isRunning)
-                    {
-                        isRunning = false;
-                        stopOnNextFound = false;
-                        cancellationToken.Cancel();
-                        RunOnUiThread(() => {
-                            startButton.Text = "▶ بدء الخلط";
-                            textView.Text = "⏹ تم إيقاف الخلط (تم العثور على الرقم)";
-                            Toast.MakeText(this, "⏹ تم إيقاف الخلط", ToastLength.Short).Show();
-                        });
-                        
-                        // ✅ تحديث الزر العائم إلى وضع الإيقاف
-                        Intent stopIntent = new Intent("STOP_SHUFFLING");
-                        SendBroadcast(stopIntent);
-                        break; // الخروج من الحلقة
-                    }
+                    // ✅ استئناف الخلط
+                    isRunning = true;
+                    RunOnUiThread(() => {
+                        startButton.Text = "⏹ إيقاف الخلط";
+                        textView.Text = "🔄 استئناف الخلط...";
+                    });
+                    cancellationToken = new System.Threading.CancellationTokenSource();
                 }
                 
                 await System.Threading.Tasks.Task.Delay(100, token);
@@ -238,8 +226,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة لمحاكاة النقر في منتصف الشاشة
-    private void PerformClickInCenter()
+    private void PerformTapOnCenter()
     {
         try
         {
@@ -250,27 +237,18 @@ public class MainActivity : Activity
             int centerX = size.X / 2;
             int centerY = size.Y / 2;
             
-            // إنشاء MotionEvent للنقر
-            long downTime = SystemClock.UptimeMillis();
-            long eventTime = SystemClock.UptimeMillis();
+            // ✅ محاكاة النقرة باستخدام AccessibilityService
+            // (هذا يتطلب صلاحية ACCESSIBILITY_SERVICE)
+            Intent tapIntent = new Intent("PERFORM_TAP");
+            tapIntent.PutExtra("x", centerX);
+            tapIntent.PutExtra("y", centerY);
+            SendBroadcast(tapIntent);
             
-            var downEvent = MotionEvent.Obtain(downTime, eventTime, MotionEventActions.Down, centerX, centerY, 0);
-            var upEvent = MotionEvent.Obtain(downTime, eventTime + 100, MotionEventActions.Up, centerX, centerY, 0);
-            
-            // إرسال الحدث إلى النافذة الحالية
-            WindowManager.DefaultDisplay.?.DispatchPointerEvent(downEvent);
-            WindowManager.DefaultDisplay.?.DispatchPointerEvent(upEvent);
-            
-            downEvent.Recycle();
-            upEvent.Recycle();
-            
-            RunOnUiThread(() => {
-                Toast.MakeText(this, "👆 تم النقر في منتصف الشاشة", ToastLength.Short).Show();
-            });
+            Toast.MakeText(this, "👆 تم النقر في منتصف الشاشة", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
-            Android.Util.Log.Error("MainActivity", "Click Error: " + ex.Message);
+            Android.Util.Log.Error("MainActivity", "Tap Error: " + ex.Message);
         }
     }
 
