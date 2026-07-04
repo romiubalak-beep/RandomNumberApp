@@ -6,6 +6,7 @@ using Android.Graphics;
 using Android.Content;
 using Android.Runtime;
 using Android.Provider;
+using Android.AccessibilityServices;
 
 [Service]
 public class FloatingButtonService : Service
@@ -17,6 +18,7 @@ public class FloatingButtonService : Service
     private bool isCreated = false;
     private BroadcastReceiver receiver;
     private bool isShuffling = false;
+    private bool isPaused = false;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -61,35 +63,39 @@ public class FloatingButtonService : Service
                 }
             }
 
-            // إنشاء الزر بحجم أصغر
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
             floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 18);
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ وظيفة الزر: تشغيل/إيقاف الخلط
             floatingButton.Click += (s, e) => {
-                isShuffling = !isShuffling;
-                if (isShuffling)
+                if (!isPaused)
                 {
-                    floatingButton.Text = "⏹";
-                    floatingButton.SetBackgroundColor(Color.Green);
-                    Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-                    Intent startIntent = new Intent("START_SHUFFLING");
-                    SendBroadcast(startIntent);
+                    isShuffling = !isShuffling;
+                    if (isShuffling)
+                    {
+                        floatingButton.Text = "⏹";
+                        floatingButton.SetBackgroundColor(Color.Green);
+                        Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+                        Intent startIntent = new Intent("START_SHUFFLING");
+                        SendBroadcast(startIntent);
+                    }
+                    else
+                    {
+                        floatingButton.Text = "▶";
+                        floatingButton.SetBackgroundColor(Color.Blue);
+                        Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+                        Intent stopIntent = new Intent("STOP_SHUFFLING");
+                        SendBroadcast(stopIntent);
+                    }
                 }
                 else
                 {
-                    floatingButton.Text = "▶";
-                    floatingButton.SetBackgroundColor(Color.Blue);
-                    Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-                    Intent stopIntent = new Intent("STOP_SHUFFLING");
-                    SendBroadcast(stopIntent);
+                    Toast.MakeText(this, "⏳ توقف مؤقت بسبب العثور على الرقم", ToastLength.Short).Show();
                 }
             };
             
-            // تصغير حجم الزر
             LinearLayout container = new LinearLayout(this);
             container.AddView(floatingButton);
             floatingView = container;
@@ -113,9 +119,7 @@ public class FloatingButtonService : Service
             }
             
             var layoutParams = new WindowManagerLayoutParams(
-                140, // عرض أصغر
-                140, // ارتفاع أصغر
-                windowType,
+                140, 140, windowType,
                 WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
                 Format.Translucent);
             
@@ -131,6 +135,21 @@ public class FloatingButtonService : Service
         {
             Toast.MakeText(this, "❌ خطأ: " + ex.Message, ToastLength.Long).Show();
             Android.Util.Log.Error("FloatingService", "Create Error: " + ex.Message);
+        }
+    }
+
+    public void PauseShuffling(bool pause)
+    {
+        isPaused = pause;
+        if (pause)
+        {
+            floatingButton.Text = "⏸";
+            floatingButton.SetBackgroundColor(Color.Orange);
+        }
+        else
+        {
+            floatingButton.Text = "▶";
+            floatingButton.SetBackgroundColor(Color.Blue);
         }
     }
 
@@ -155,7 +174,7 @@ public class FloatingButtonService : Service
 
     private void ChangeButtonColor()
     {
-        if (floatingButton != null && isCreated)
+        if (floatingButton != null && isCreated && !isPaused)
         {
             try
             {
