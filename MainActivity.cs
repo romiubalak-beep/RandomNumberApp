@@ -18,6 +18,8 @@ public class MainActivity : Activity
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
+    private BroadcastReceiver clickReceiver;
+    private FloatingButtonService floatingService;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -148,6 +150,7 @@ public class MainActivity : Activity
         {
             while (isRunning && !token.IsCancellationRequested)
             {
+                // خلط Fisher-Yates
                 int n = numbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
@@ -166,28 +169,30 @@ public class MainActivity : Activity
                 }
                 textView.Text = result;
                 
+                // ✅ التحقق من الرقم المستهدف (1, 2, 3)
                 if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
                 {
                     RunOnUiThread(() => {
                         Toast.MakeText(this, "🎯 تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
+                        // تغيير لون الزر العائم
                         Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
                         SendBroadcast(colorIntent);
                     });
                     
-                    // إيقاف الخلط مؤقتاً
+                    // ✅ إيقاف الخلط مؤقتاً
                     isRunning = false;
                     RunOnUiThread(() => {
                         startButton.Text = "▶ بدء الخلط";
                         textView.Text = "⏸ توقف مؤقت: تم العثور على " + numbers[0];
                     });
                     
-                    // محاكاة نقرة في منتصف الشاشة
+                    // ✅ محاكاة نقرة في منتصف الشاشة
                     PerformTapOnCenter();
                     
-                    // انتظار ثانية
+                    // ✅ انتظار ثانية ثم استئناف الخلط
                     await System.Threading.Tasks.Task.Delay(1000);
                     
-                    // استئناف الخلط
+                    // ✅ استئناف الخلط
                     isRunning = true;
                     RunOnUiThread(() => {
                         startButton.Text = "⏹ إيقاف الخلط";
@@ -232,18 +237,18 @@ public class MainActivity : Activity
             int centerX = size.X / 2;
             int centerY = size.Y / 2;
             
-            // ✅ طريقة آمنة لمحاكاة النقر
-            Java.Lang.Process process = Java.Lang.Runtime.GetRuntime().Exec(
-                new string[] { "input", "tap", centerX.ToString(), centerY.ToString() }
-            );
-            process.WaitFor();
+            // ✅ محاكاة النقرة باستخدام AccessibilityService
+            // (هذا يتطلب صلاحية ACCESSIBILITY_SERVICE)
+            Intent tapIntent = new Intent("PERFORM_TAP");
+            tapIntent.PutExtra("x", centerX);
+            tapIntent.PutExtra("y", centerY);
+            SendBroadcast(tapIntent);
             
-            Toast.MakeText(this, "👆 تم النقر في وسط الشاشة", ToastLength.Short).Show();
+            Toast.MakeText(this, "👆 تم النقر في منتصف الشاشة", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
             Android.Util.Log.Error("MainActivity", "Tap Error: " + ex.Message);
-            Toast.MakeText(this, "⚠️ فشل النقر: " + ex.Message, ToastLength.Short).Show();
         }
     }
 
