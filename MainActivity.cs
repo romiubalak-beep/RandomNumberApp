@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
-using Android.Runtime;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -19,7 +18,6 @@ public class MainActivity : Activity
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
-    private FloatingButtonService floatingService;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -176,20 +174,20 @@ public class MainActivity : Activity
                         SendBroadcast(colorIntent);
                     });
                     
-                    // ✅ إيقاف الخلط مؤقتاً
+                    // إيقاف الخلط مؤقتاً
                     isRunning = false;
                     RunOnUiThread(() => {
                         startButton.Text = "▶ بدء الخلط";
                         textView.Text = "⏸ توقف مؤقت: تم العثور على " + numbers[0];
                     });
                     
-                    // ✅ تنفيذ نقرة في منتصف الشاشة
+                    // محاكاة نقرة في منتصف الشاشة
                     PerformTapOnCenter();
                     
-                    // ✅ انتظار ثانية
+                    // انتظار ثانية
                     await System.Threading.Tasks.Task.Delay(1000);
                     
-                    // ✅ استئناف الخلط
+                    // استئناف الخلط
                     isRunning = true;
                     RunOnUiThread(() => {
                         startButton.Text = "⏹ إيقاف الخلط";
@@ -227,21 +225,25 @@ public class MainActivity : Activity
     {
         try
         {
-            // ✅ طريقة بديلة للنقر باستخدام ADB (محاكاة)
-            // هذه الطريقة تعمل بدون AccessibilityService
-            Java.Lang.Process process = Runtime.GetRuntime().Exec(
-                new string[] { "input", "tap", "500", "1000" }
+            // الحصول على حجم الشاشة
+            var display = WindowManager.DefaultDisplay;
+            var size = new Point();
+            display.GetSize(size);
+            int centerX = size.X / 2;
+            int centerY = size.Y / 2;
+            
+            // ✅ طريقة آمنة لمحاكاة النقر
+            Java.Lang.Process process = Java.Lang.Runtime.GetRuntime().Exec(
+                new string[] { "input", "tap", centerX.ToString(), centerY.ToString() }
             );
+            process.WaitFor();
             
-            // ✅ طريقة أخرى باستخدام UI Automator
-            // (هذه تتطلب صلاحية إضافية)
-            
-            Toast.MakeText(this, "👆 تم محاكاة النقر في منتصف الشاشة", ToastLength.Short).Show();
+            Toast.MakeText(this, "👆 تم النقر في وسط الشاشة", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
             Android.Util.Log.Error("MainActivity", "Tap Error: " + ex.Message);
-            Toast.MakeText(this, "⚠️ فشل في محاكاة النقر: " + ex.Message, ToastLength.Long).Show();
+            Toast.MakeText(this, "⚠️ فشل النقر: " + ex.Message, ToastLength.Short).Show();
         }
     }
 
