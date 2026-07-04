@@ -17,6 +17,7 @@ public class MainActivity : Activity
     private bool isRunning = false;
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
+    private BroadcastReceiver shuffleReceiver;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -25,22 +26,20 @@ public class MainActivity : Activity
         rng = RandomNumberGenerator.Create();
         cancellationToken = new System.Threading.CancellationTokenSource();
         
-        // طلب صلاحية العرض فوق التطبيقات
         CheckOverlayPermission();
         
-        // إنشاء واجهة التطبيق
         LinearLayout layout = new LinearLayout(this);
         layout.Orientation = Orientation.Vertical;
         layout.SetPadding(50, 50, 50, 50);
         layout.SetGravity(GravityFlags.Center);
         
         textView = new TextView(this);
-        textView.Text = "اضغط على الزر لبدء الخلط السريع";
+        textView.Text = "استخدم الزر العائم للتحكم بالخلط";
         textView.TextSize = 20;
         textView.SetTextColor(Color.Black);
         
         startButton = new Button(this);
-        startButton.Text = "بدء الخلط السريع";
+        startButton.Text = "بدء الخلط (يدوي)";
         startButton.SetTextColor(Color.White);
         startButton.SetBackgroundColor(Color.Blue);
         startButton.Click += StartShuffling;
@@ -50,7 +49,22 @@ public class MainActivity : Activity
         
         SetContentView(layout);
         
-        // بدء خدمة الزر العائم مع تأخير
+        // استقبال إشارات من الزر العائم
+        shuffleReceiver = new ShuffleBroadcastReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.AddAction("START_SHUFFLING");
+        filter.AddAction("STOP_SHUFFLING");
+        
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
+        {
+            RegisterReceiver(shuffleReceiver, filter, ReceiverFlags.NotExported);
+        }
+        else
+        {
+            RegisterReceiver(shuffleReceiver, filter);
+        }
+        
+        // بدء خدمة الزر العائم
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(() => {
             try
@@ -63,6 +77,34 @@ public class MainActivity : Activity
                 Toast.MakeText(this, "خطأ في بدء الخدمة: " + ex.Message, ToastLength.Long).Show();
             }
         }, 2000);
+    }
+
+    private class ShuffleBroadcastReceiver : BroadcastReceiver
+    {
+        public override void OnReceive(Context context, Intent intent)
+        {
+            var activity = (MainActivity)context;
+            if (intent.Action == "START_SHUFFLING")
+            {
+                if (!activity.isRunning)
+                {
+                    activity.isRunning = true;
+                    activity.startButton.Text = "⏹ إيقاف الخلط";
+                    activity.cancellationToken = new System.Threading.CancellationTokenSource();
+                    activity.StartFastShuffling(activity.cancellationToken.Token);
+                }
+            }
+            else if (intent.Action == "STOP_SHUFFLING")
+            {
+                if (activity.isRunning)
+                {
+                    activity.isRunning = false;
+                    activity.startButton.Text = "▶ بدء الخلط";
+                    activity.cancellationToken.Cancel();
+                    activity.textView.Text = "⏹ تم إيقاف الخلط";
+                }
+            }
+        }
     }
 
     private void CheckOverlayPermission()
@@ -85,15 +127,15 @@ public class MainActivity : Activity
         {
             isRunning = true;
             startButton.Text = "⏹ إيقاف الخلط";
+            cancellationToken = new System.Threading.CancellationTokenSource();
             StartFastShuffling(cancellationToken.Token);
         }
         else
         {
             isRunning = false;
-            startButton.Text = "▶ بدء الخلط السريع";
+            startButton.Text = "▶ بدء الخلط";
             cancellationToken.Cancel();
-            cancellationToken = new System.Threading.CancellationTokenSource();
-            textView.Text = "⏸ تم إيقاف الخلط";
+            textView.Text = "⏹ تم إيقاف الخلط";
         }
     }
 
@@ -117,7 +159,7 @@ public class MainActivity : Activity
                     numbers[j] = temp;
                 }
                 
-                string result = "🔄 الخلط السريع:\n";
+                string result = "🔄 الخلط:\n";
                 for (int i = 0; i < Math.Min(10, numbers.Count); i++)
                 {
                     result += numbers[i] + " ";
@@ -163,5 +205,15 @@ public class MainActivity : Activity
                 });
             }
         }
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        try
+        {
+            UnregisterReceiver(shuffleReceiver);
+        }
+        catch (Exception) { }
     }
 }
