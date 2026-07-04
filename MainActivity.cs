@@ -18,8 +18,7 @@ public class MainActivity : Activity
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
-    private BroadcastReceiver clickReceiver;
-    private FloatingButtonService floatingService;
+    private TapAccessibilityService tapService;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -29,6 +28,7 @@ public class MainActivity : Activity
         cancellationToken = new System.Threading.CancellationTokenSource();
         
         CheckOverlayPermission();
+        CheckAccessibilityPermission();
         
         LinearLayout layout = new LinearLayout(this);
         layout.Orientation = Orientation.Vertical;
@@ -51,11 +51,11 @@ public class MainActivity : Activity
         
         SetContentView(layout);
         
-        // استقبال إشارات من الزر العائم
         shuffleReceiver = new ShuffleBroadcastReceiver();
         IntentFilter filter = new IntentFilter();
         filter.AddAction("START_SHUFFLING");
         filter.AddAction("STOP_SHUFFLING");
+        filter.AddAction("PERFORM_TAP");
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -66,7 +66,6 @@ public class MainActivity : Activity
             RegisterReceiver(shuffleReceiver, filter);
         }
         
-        // بدء خدمة الزر العائم
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(() => {
             try
@@ -79,6 +78,20 @@ public class MainActivity : Activity
                 Toast.MakeText(this, "خطأ في بدء الخدمة: " + ex.Message, ToastLength.Long).Show();
             }
         }, 2000);
+    }
+
+    private void CheckAccessibilityPermission()
+    {
+        try
+        {
+            Intent intent = new Intent(android.provider.Settings.ActionAccessibilitySettings);
+            StartActivity(intent);
+            Toast.MakeText(this, "الرجاء تفعيل خدمة إمكانية الوصول للتطبيق", ToastLength.Long).Show();
+        }
+        catch (Exception ex)
+        {
+            Android.Util.Log.Error("MainActivity", "Accessibility Error: " + ex.Message);
+        }
     }
 
     private class ShuffleBroadcastReceiver : BroadcastReceiver
@@ -105,6 +118,12 @@ public class MainActivity : Activity
                     activity.cancellationToken.Cancel();
                     activity.textView.Text = "⏹ تم إيقاف الخلط";
                 }
+            }
+            else if (intent.Action == "PERFORM_TAP")
+            {
+                int x = intent.GetIntExtra("x", 0);
+                int y = intent.GetIntExtra("y", 0);
+                activity.PerformTapOnCenter();
             }
         }
     }
@@ -150,7 +169,6 @@ public class MainActivity : Activity
         {
             while (isRunning && !token.IsCancellationRequested)
             {
-                // خلط Fisher-Yates
                 int n = numbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
@@ -169,30 +187,24 @@ public class MainActivity : Activity
                 }
                 textView.Text = result;
                 
-                // ✅ التحقق من الرقم المستهدف (1, 2, 3)
                 if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
                 {
                     RunOnUiThread(() => {
                         Toast.MakeText(this, "🎯 تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
-                        // تغيير لون الزر العائم
                         Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
                         SendBroadcast(colorIntent);
                     });
                     
-                    // ✅ إيقاف الخلط مؤقتاً
                     isRunning = false;
                     RunOnUiThread(() => {
                         startButton.Text = "▶ بدء الخلط";
                         textView.Text = "⏸ توقف مؤقت: تم العثور على " + numbers[0];
                     });
                     
-                    // ✅ محاكاة نقرة في منتصف الشاشة
                     PerformTapOnCenter();
                     
-                    // ✅ انتظار ثانية ثم استئناف الخلط
                     await System.Threading.Tasks.Task.Delay(1000);
                     
-                    // ✅ استئناف الخلط
                     isRunning = true;
                     RunOnUiThread(() => {
                         startButton.Text = "⏹ إيقاف الخلط";
@@ -230,25 +242,30 @@ public class MainActivity : Activity
     {
         try
         {
-            // الحصول على حجم الشاشة
             var display = WindowManager.DefaultDisplay;
             var size = new Point();
             display.GetSize(size);
             int centerX = size.X / 2;
             int centerY = size.Y / 2;
             
-            // ✅ محاكاة النقرة باستخدام AccessibilityService
-            // (هذا يتطلب صلاحية ACCESSIBILITY_SERVICE)
-            Intent tapIntent = new Intent("PERFORM_TAP");
-            tapIntent.PutExtra("x", centerX);
-            tapIntent.PutExtra("y", centerY);
-            SendBroadcast(tapIntent);
-            
-            Toast.MakeText(this, "👆 تم النقر في منتصف الشاشة", ToastLength.Short).Show();
+            // محاولة استخدام AccessibilityService
+            try
+            {
+                Intent tapIntent = new Intent("PERFORM_TAP");
+                tapIntent.PutExtra("x", centerX);
+                tapIntent.PutExtra("y", centerY);
+                SendBroadcast(tapIntent);
+                Toast.MakeText(this, "👆 تم النقر في منتصف الشاشة", ToastLength.Short).Show();
+            }
+            catch (Exception ex)
+            {
+                Android.Util.Log.Error("MainActivity", "Tap Error: " + ex.Message);
+                Toast.MakeText(this, "⚠️ لا يمكن النقر: " + ex.Message, ToastLength.Long).Show();
+            }
         }
         catch (Exception ex)
         {
-            Android.Util.Log.Error("MainActivity", "Tap Error: " + ex.Message);
+            Android.Util.Log.Error("MainActivity", "Display Error: " + ex.Message);
         }
     }
 
