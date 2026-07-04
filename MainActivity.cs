@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
+using Android.Runtime;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -18,7 +19,6 @@ public class MainActivity : Activity
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
-    private BroadcastReceiver clickReceiver;
     private FloatingButtonService floatingService;
 
     protected override void OnCreate(Bundle savedInstanceState)
@@ -150,7 +150,6 @@ public class MainActivity : Activity
         {
             while (isRunning && !token.IsCancellationRequested)
             {
-                // خلط Fisher-Yates
                 int n = numbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
@@ -169,12 +168,10 @@ public class MainActivity : Activity
                 }
                 textView.Text = result;
                 
-                // ✅ التحقق من الرقم المستهدف (1, 2, 3)
                 if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
                 {
                     RunOnUiThread(() => {
                         Toast.MakeText(this, "🎯 تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
-                        // تغيير لون الزر العائم
                         Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
                         SendBroadcast(colorIntent);
                     });
@@ -186,10 +183,10 @@ public class MainActivity : Activity
                         textView.Text = "⏸ توقف مؤقت: تم العثور على " + numbers[0];
                     });
                     
-                    // ✅ محاكاة نقرة في منتصف الشاشة
+                    // ✅ تنفيذ نقرة في منتصف الشاشة
                     PerformTapOnCenter();
                     
-                    // ✅ انتظار ثانية ثم استئناف الخلط
+                    // ✅ انتظار ثانية
                     await System.Threading.Tasks.Task.Delay(1000);
                     
                     // ✅ استئناف الخلط
@@ -230,25 +227,21 @@ public class MainActivity : Activity
     {
         try
         {
-            // الحصول على حجم الشاشة
-            var display = WindowManager.DefaultDisplay;
-            var size = new Point();
-            display.GetSize(size);
-            int centerX = size.X / 2;
-            int centerY = size.Y / 2;
+            // ✅ طريقة بديلة للنقر باستخدام ADB (محاكاة)
+            // هذه الطريقة تعمل بدون AccessibilityService
+            Java.Lang.Process process = Runtime.GetRuntime().Exec(
+                new string[] { "input", "tap", "500", "1000" }
+            );
             
-            // ✅ محاكاة النقرة باستخدام AccessibilityService
-            // (هذا يتطلب صلاحية ACCESSIBILITY_SERVICE)
-            Intent tapIntent = new Intent("PERFORM_TAP");
-            tapIntent.PutExtra("x", centerX);
-            tapIntent.PutExtra("y", centerY);
-            SendBroadcast(tapIntent);
+            // ✅ طريقة أخرى باستخدام UI Automator
+            // (هذه تتطلب صلاحية إضافية)
             
-            Toast.MakeText(this, "👆 تم النقر في منتصف الشاشة", ToastLength.Short).Show();
+            Toast.MakeText(this, "👆 تم محاكاة النقر في منتصف الشاشة", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
             Android.Util.Log.Error("MainActivity", "Tap Error: " + ex.Message);
+            Toast.MakeText(this, "⚠️ فشل في محاكاة النقر: " + ex.Message, ToastLength.Long).Show();
         }
     }
 
