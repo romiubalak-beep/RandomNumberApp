@@ -6,7 +6,6 @@ using Android.Graphics;
 using Android.Content;
 using Android.Runtime;
 using Android.Provider;
-using Android.AccessibilityServices;
 
 [Service]
 public class FloatingButtonService : Service
@@ -141,15 +140,18 @@ public class FloatingButtonService : Service
     public void PauseShuffling(bool pause)
     {
         isPaused = pause;
-        if (pause)
+        if (floatingButton != null)
         {
-            floatingButton.Text = "⏸";
-            floatingButton.SetBackgroundColor(Color.Orange);
-        }
-        else
-        {
-            floatingButton.Text = "▶";
-            floatingButton.SetBackgroundColor(Color.Blue);
+            if (pause)
+            {
+                floatingButton.Text = "⏸";
+                floatingButton.SetBackgroundColor(Color.Orange);
+            }
+            else
+            {
+                floatingButton.Text = "▶";
+                floatingButton.SetBackgroundColor(Color.Blue);
+            }
         }
     }
 
