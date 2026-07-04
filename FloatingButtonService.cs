@@ -15,6 +15,7 @@ public class FloatingButtonService : Service
     private Button floatingButton;
     private bool isRed = false;
     private bool isCreated = false;
+    private BroadcastReceiver receiver;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -25,14 +26,26 @@ public class FloatingButtonService : Service
     {
         base.OnCreate();
         
-        // تأخير إنشاء الزر العائم لضمان اكتمال الإعدادات
+        // تأخير إنشاء الزر العائم
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(() => {
             CreateFloatingButton();
         }, 2000);
         
+        // إنشاء الـ BroadcastReceiver مع تحديد EXPORTED
+        receiver = new FloatingButtonReceiver();
+        
         IntentFilter filter = new IntentFilter("CHANGE_FLOATING_BUTTON_COLOR");
-        RegisterReceiver(receiver, filter);
+        
+        // ✅ الحل: استخدام RegisterReceiver مع RECEIVER_NOT_EXPORTED
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu) // Android 13+
+        {
+            RegisterReceiver(receiver, filter, ReceiverFlags.NotExported);
+        }
+        else
+        {
+            RegisterReceiver(receiver, filter);
+        }
     }
 
     private void CreateFloatingButton()
@@ -72,7 +85,6 @@ public class FloatingButtonService : Service
             // الحصول على WindowManager
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             
-            // التحقق من أن windowManager ليس null
             if (windowManager == null)
             {
                 Toast.MakeText(this, "فشل في الحصول على WindowManager", ToastLength.Long).Show();
@@ -102,19 +114,10 @@ public class FloatingButtonService : Service
             layoutParams.X = 0;
             layoutParams.Y = 100;
             
-            // إضافة الزر مع محاولة آمنة
-            try
-            {
-                windowManager.AddView(floatingView, layoutParams);
-                isCreated = true;
-                Toast.MakeText(this, "✅ تم إنشاء الزر العائم", ToastLength.Short).Show();
-            }
-            catch (Exception ex)
-            {
-                Toast.MakeText(this, "❌ فشل إضافة الزر: " + ex.Message, ToastLength.Long).Show();
-                Android.Util.Log.Error("FloatingService", "AddView Error: " + ex.Message);
-                Android.Util.Log.Error("FloatingService", ex.StackTrace);
-            }
+            // إضافة الزر
+            windowManager.AddView(floatingView, layoutParams);
+            isCreated = true;
+            Toast.MakeText(this, "✅ تم إنشاء الزر العائم", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
@@ -123,8 +126,6 @@ public class FloatingButtonService : Service
             Android.Util.Log.Error("FloatingService", ex.StackTrace);
         }
     }
-
-    private BroadcastReceiver receiver = new FloatingButtonReceiver();
 
     private class FloatingButtonReceiver : BroadcastReceiver
     {
