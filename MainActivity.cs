@@ -24,16 +24,7 @@ public class MainActivity : Activity
         rng = RandomNumberGenerator.Create();
         
         // طلب صلاحية العرض فوق التطبيقات
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
-        {
-            if (!Settings.CanDrawOverlays(this))
-            {
-                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
-                    Android.Net.Uri.Parse("package:" + PackageName));
-                StartActivity(intent);
-                Toast.MakeText(this, "الرجاء تفعيل صلاحية العرض فوق التطبيقات", ToastLength.Long).Show();
-            }
-        }
+        CheckOverlayPermission();
         
         // إنشاء واجهة التطبيق
         LinearLayout layout = new LinearLayout(this);
@@ -57,9 +48,26 @@ public class MainActivity : Activity
         
         SetContentView(layout);
         
-        // بدء خدمة الزر العائم
-        Intent serviceIntent = new Intent(this, typeof(FloatingButtonService));
-        StartService(serviceIntent);
+        // بدء خدمة الزر العائم مع تأخير
+        Handler handler = new Handler(Looper.MainLooper);
+        handler.PostDelayed(() => {
+            Intent serviceIntent = new Intent(this, typeof(FloatingButtonService));
+            StartService(serviceIntent);
+        }, 2000);
+    }
+
+    private void CheckOverlayPermission()
+    {
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
+        {
+            if (!Settings.CanDrawOverlays(this))
+            {
+                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
+                    Android.Net.Uri.Parse("package:" + PackageName));
+                StartActivity(intent);
+                Toast.MakeText(this, "الرجاء تفعيل صلاحية العرض فوق التطبيقات", ToastLength.Long).Show();
+            }
+        }
     }
 
     private void StartShuffling(object sender, EventArgs e)
@@ -106,8 +114,15 @@ public class MainActivity : Activity
             if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
             {
                 Toast.MakeText(this, "تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
-                Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
-                SendBroadcast(colorIntent);
+                try
+                {
+                    Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
+                    SendBroadcast(colorIntent);
+                }
+                catch (Exception ex)
+                {
+                    Android.Util.Log.Error("MainActivity", ex.Message);
+                }
             }
             
             await System.Threading.Tasks.Task.Delay(50);
