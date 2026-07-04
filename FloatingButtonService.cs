@@ -22,7 +22,12 @@ public class FloatingButtonService : Service
     public override void OnCreate()
     {
         base.OnCreate();
-        CreateFloatingButton();
+        
+        // تأخير إنشاء الزر العائم لضمان اكتمال الإعدادات
+        Handler handler = new Handler(Looper.MainLooper);
+        handler.PostDelayed(() => {
+            CreateFloatingButton();
+        }, 1000);
         
         IntentFilter filter = new IntentFilter("CHANGE_FLOATING_BUTTON_COLOR");
         RegisterReceiver(receiver, filter);
@@ -32,6 +37,17 @@ public class FloatingButtonService : Service
     {
         try
         {
+            // التحقق من صلاحية العرض فوق التطبيقات
+            if (!Settings.CanDrawOverlays(this))
+            {
+                // إذا لم تكن الصلاحية مفعلة، اطلب تفعيلها
+                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
+                    Android.Net.Uri.Parse("package:" + PackageName));
+                intent.AddFlags(ActivityFlags.NewTask);
+                StartActivity(intent);
+                return;
+            }
+
             // إنشاء الزر
             floatingButton = new Button(this);
             floatingButton.Text = "⚡";
@@ -39,20 +55,36 @@ public class FloatingButtonService : Service
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
+            // إضافة حدث للزر
+            floatingButton.Click += (s, e) => {
+                Toast.MakeText(this, "الزر العائم يعمل!", ToastLength.Short).Show();
+            };
+            
             // إنشاء Layout للزر
             LinearLayout container = new LinearLayout(this);
             container.AddView(floatingButton);
             floatingView = container;
             
-            // الحصول على WindowManager باستخدام JavaCast
+            // الحصول على WindowManager
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
+            
+            // تحديد نوع النافذة حسب إصدار Android
+            WindowManagerTypes windowType;
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+            {
+                windowType = WindowManagerTypes.ApplicationOverlay;
+            }
+            else
+            {
+                windowType = WindowManagerTypes.Phone;
+            }
             
             // إعدادات النافذة العائمة
             var layoutParams = new WindowManagerLayoutParams(
                 ViewGroup.LayoutParams.WrapContent,
                 ViewGroup.LayoutParams.WrapContent,
-                WindowManagerTypes.ApplicationOverlay,
-                WindowManagerFlags.NotFocusable,
+                windowType,
+                WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
                 Format.Translucent);
             
             layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
@@ -61,10 +93,15 @@ public class FloatingButtonService : Service
             
             // إضافة الزر
             windowManager.AddView(floatingView, layoutParams);
+            
+            Toast.MakeText(this, "تم إنشاء الزر العائم", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
+            // عرض الخطأ للمستخدم
+            Toast.MakeText(this, "خطأ: " + ex.Message, ToastLength.Long).Show();
             Android.Util.Log.Error("FloatingService", ex.Message);
+            Android.Util.Log.Error("FloatingService", ex.StackTrace);
         }
     }
 
@@ -76,8 +113,15 @@ public class FloatingButtonService : Service
         {
             if (intent.Action == "CHANGE_FLOATING_BUTTON_COLOR")
             {
-                var service = (FloatingButtonService)context;
-                service.ChangeButtonColor();
+                try
+                {
+                    var service = (FloatingButtonService)context;
+                    service.ChangeButtonColor();
+                }
+                catch (Exception ex)
+                {
+                    Android.Util.Log.Error("FloatingService", ex.Message);
+                }
             }
         }
     }
@@ -86,15 +130,22 @@ public class FloatingButtonService : Service
     {
         if (floatingButton != null)
         {
-            if (isRed)
+            try
             {
-                floatingButton.SetBackgroundColor(Color.Blue);
-                isRed = false;
+                if (isRed)
+                {
+                    floatingButton.SetBackgroundColor(Color.Blue);
+                    isRed = false;
+                }
+                else
+                {
+                    floatingButton.SetBackgroundColor(Color.Red);
+                    isRed = true;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                floatingButton.SetBackgroundColor(Color.Red);
-                isRed = true;
+                Android.Util.Log.Error("FloatingService", ex.Message);
             }
         }
     }
@@ -110,6 +161,10 @@ public class FloatingButtonService : Service
             }
             catch (Exception) { }
         }
-        UnregisterReceiver(receiver);
+        try
+        {
+            UnregisterReceiver(receiver);
+        }
+        catch (Exception) { }
     }
 }
