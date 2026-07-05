@@ -76,7 +76,7 @@ public class MainActivity : Activity
             
             SetContentView(mainLayout);
             
-            // ✅ بدء خدمة الزر العائم
+            // ✅ بدء خدمة الزر العائم (مثل Klick'r)
             StartFloatingButtonService();
             
             shuffleReceiver = new ShuffleBroadcastReceiver();
