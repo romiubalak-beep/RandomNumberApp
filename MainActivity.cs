@@ -18,6 +18,7 @@ public class MainActivity : Activity
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
+    private bool isShufflingActive = false;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -55,6 +56,7 @@ public class MainActivity : Activity
         filter.AddAction("START_SHUFFLING");
         filter.AddAction("STOP_SHUFFLING");
         filter.AddAction("PERFORM_TAP");
+        filter.AddAction("UPDATE_STATUS");
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -100,28 +102,64 @@ public class MainActivity : Activity
             var activity = (MainActivity)context;
             if (intent.Action == "START_SHUFFLING")
             {
-                if (!activity.isRunning)
-                {
-                    activity.isRunning = true;
-                    activity.startButton.Text = "⏹ إيقاف الخلط";
-                    activity.cancellationToken = new System.Threading.CancellationTokenSource();
-                    activity.StartFastShuffling(activity.cancellationToken.Token);
-                }
+                activity.StartShufflingFromFloatingButton();
             }
             else if (intent.Action == "STOP_SHUFFLING")
             {
-                if (activity.isRunning)
-                {
-                    activity.isRunning = false;
-                    activity.startButton.Text = "▶ بدء الخلط";
-                    activity.cancellationToken.Cancel();
-                    activity.textView.Text = "⏹ تم إيقاف الخلط";
-                }
+                activity.StopShufflingFromFloatingButton();
             }
             else if (intent.Action == "PERFORM_TAP")
             {
+                int x = intent.GetIntExtra("x", 0);
+                int y = intent.GetIntExtra("y", 0);
                 activity.PerformTapOnCenter();
             }
+            else if (intent.Action == "UPDATE_STATUS")
+            {
+                bool status = intent.GetBooleanExtra("isRunning", false);
+                activity.isShufflingActive = status;
+                activity.RunOnUiThread(() => {
+                    if (status)
+                    {
+                        activity.startButton.Text = "⏹ إيقاف الخلط";
+                        activity.textView.Text = "🔄 الخلط قيد التشغيل...";
+                    }
+                    else
+                    {
+                        activity.startButton.Text = "▶ بدء الخلط";
+                        activity.textView.Text = "⏹ تم إيقاف الخلط";
+                    }
+                });
+            }
+        }
+    }
+
+    private void StartShufflingFromFloatingButton()
+    {
+        if (!isRunning)
+        {
+            isRunning = true;
+            isShufflingActive = true;
+            RunOnUiThread(() => {
+                startButton.Text = "⏹ إيقاف الخلط";
+                textView.Text = "🔄 الخلط قيد التشغيل...";
+            });
+            cancellationToken = new System.Threading.CancellationTokenSource();
+            StartFastShuffling(cancellationToken.Token);
+        }
+    }
+
+    private void StopShufflingFromFloatingButton()
+    {
+        if (isRunning)
+        {
+            isRunning = false;
+            isShufflingActive = false;
+            cancellationToken.Cancel();
+            RunOnUiThread(() => {
+                startButton.Text = "▶ بدء الخلط";
+                textView.Text = "⏹ تم إيقاف الخلط";
+            });
         }
     }
 
@@ -144,16 +182,26 @@ public class MainActivity : Activity
         if (!isRunning)
         {
             isRunning = true;
+            isShufflingActive = true;
             startButton.Text = "⏹ إيقاف الخلط";
             cancellationToken = new System.Threading.CancellationTokenSource();
             StartFastShuffling(cancellationToken.Token);
+            // إبلاغ الزر العائم بحالة الخلط
+            Intent statusIntent = new Intent("UPDATE_FLOATING_STATUS");
+            statusIntent.PutExtra("isRunning", true);
+            SendBroadcast(statusIntent);
         }
         else
         {
             isRunning = false;
+            isShufflingActive = false;
             startButton.Text = "▶ بدء الخلط";
             cancellationToken.Cancel();
             textView.Text = "⏹ تم إيقاف الخلط";
+            // إبلاغ الزر العائم بحالة الخلط
+            Intent statusIntent = new Intent("UPDATE_FLOATING_STATUS");
+            statusIntent.PutExtra("isRunning", false);
+            SendBroadcast(statusIntent);
         }
     }
 
@@ -182,7 +230,9 @@ public class MainActivity : Activity
                 {
                     result += numbers[i] + " ";
                 }
-                textView.Text = result;
+                RunOnUiThread(() => {
+                    textView.Text = result;
+                });
                 
                 if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
                 {
@@ -192,16 +242,19 @@ public class MainActivity : Activity
                         SendBroadcast(colorIntent);
                     });
                     
+                    // إيقاف الخلط مؤقتاً
                     isRunning = false;
                     RunOnUiThread(() => {
                         startButton.Text = "▶ بدء الخلط";
                         textView.Text = "⏸ توقف مؤقت: تم العثور على " + numbers[0];
                     });
                     
+                    // النقر على منتصف الشاشة
                     PerformTapOnCenter();
                     
                     await System.Threading.Tasks.Task.Delay(1000);
                     
+                    // استئناف الخلط
                     isRunning = true;
                     RunOnUiThread(() => {
                         startButton.Text = "⏹ إيقاف الخلط";
@@ -239,24 +292,29 @@ public class MainActivity : Activity
     {
         try
         {
-            var display = WindowManager.DefaultDisplay;
-            var size = new Point();
-            display.GetSize(size);
-            int centerX = size.X / 2;
-            int centerY = size.Y / 2;
-            
+            // استخدام AccessibilityService للنقر
             try
             {
                 Intent tapIntent = new Intent("PERFORM_TAP");
+                // الحصول على حجم الشاشة
+                var display = WindowManager.DefaultDisplay;
+                var size = new Point();
+                display.GetSize(size);
+                int centerX = size.X / 2;
+                int centerY = size.Y / 2;
                 tapIntent.PutExtra("x", centerX);
                 tapIntent.PutExtra("y", centerY);
                 SendBroadcast(tapIntent);
-                Toast.MakeText(this, "👆 تم النقر في منتصف الشاشة", ToastLength.Short).Show();
+                RunOnUiThread(() => {
+                    Toast.MakeText(this, "👆 تم النقر في منتصف الشاشة", ToastLength.Short).Show();
+                });
             }
             catch (Exception ex)
             {
                 Android.Util.Log.Error("MainActivity", "Tap Error: " + ex.Message);
-                Toast.MakeText(this, "⚠️ لا يمكن النقر: " + ex.Message, ToastLength.Long).Show();
+                RunOnUiThread(() => {
+                    Toast.MakeText(this, "⚠️ لا يمكن النقر: " + ex.Message, ToastLength.Long).Show();
+                });
             }
         }
         catch (Exception ex)
