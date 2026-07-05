@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.randomapp">
 
+    <!-- ✅ صلاحيات Klick'r -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.ACCESSIBILITY_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -19,11 +20,13 @@
             </intent-filter>
         </activity>
         
+        <!-- ✅ خدمة الزر العائم -->
         <service
             android:name=".FloatingButtonService"
             android:exported="false"
             android:stopWithTask="true" />
             
+        <!-- ✅ خدمة إمكانية الوصول (مثل Klick'r) -->
         <service
             android:name=".TapAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
