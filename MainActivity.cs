@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
 using System.Security.Cryptography;
+using SuaveControls.FloatingActionButton; // ✅ إضافة المكتبة
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -20,6 +21,9 @@ public class MainActivity : Activity
     private List<int> originalNumbers;
     private List<int> currentNumbers;
     private bool isShuffling = false;
+    
+    // ✅ زر عائم من المكتبة
+    private FloatingActionButton floatingButton;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -74,12 +78,16 @@ public class MainActivity : Activity
         
         SetContentView(layout);
         
+        // ✅ إنشاء الزر العائم من المكتبة
+        CreateFloatingButton();
+        
         shuffleReceiver = new ShuffleBroadcastReceiver();
         IntentFilter filter = new IntentFilter();
         filter.AddAction("START_SHUFFLING");
         filter.AddAction("STOP_SHUFFLING");
         filter.AddAction("PERFORM_TAP");
         filter.AddAction("FOUND_TARGET");
+        filter.AddAction("TOGGLE_SHUFFLING");
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -89,19 +97,57 @@ public class MainActivity : Activity
         {
             RegisterReceiver(shuffleReceiver, filter);
         }
-        
-        Handler handler = new Handler(Looper.MainLooper);
-        handler.PostDelayed(() => {
-            try
+    }
+
+    // ✅ دالة إنشاء الزر العائم باستخدام المكتبة
+    private void CreateFloatingButton()
+    {
+        try
+        {
+            // ✅ إنشاء الزر العائم
+            floatingButton = new FloatingActionButton(this);
+            floatingButton.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_play));
+            floatingButton.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
+            floatingButton.RippleColor = Color.ParseColor("#BBDEFB");
+            
+            // ✅ تحديد موقع الزر (الزاوية السفلية اليمنى)
+            var layoutParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WrapContent,
+                FrameLayout.LayoutParams.WrapContent);
+            layoutParams.Gravity = GravityFlags.Bottom | GravityFlags.Right;
+            layoutParams.SetMargins(0, 0, 30, 30);
+            
+            // ✅ إضافة الزر إلى النافذة الرئيسية
+            var rootLayout = Window.DecorView.RootView as ViewGroup;
+            if (rootLayout != null)
             {
-                Intent serviceIntent = new Intent(this, typeof(FloatingButtonService));
-                StartService(serviceIntent);
+                rootLayout.AddView(floatingButton, layoutParams);
             }
-            catch (Exception ex)
-            {
-                Toast.MakeText(this, "خطأ في بدء الخدمة: " + ex.Message, ToastLength.Long).Show();
-            }
-        }, 2000);
+            
+            // ✅ إضافة حدث الضغط
+            floatingButton.Click += (s, e) => {
+                // ✅ إرسال إشارة تبديل الخلط إلى BroadcastReceiver
+                Intent toggleIntent = new Intent("TOGGLE_SHUFFLING");
+                SendBroadcast(toggleIntent);
+                
+                // ✅ تغيير أيقونة الزر حسب الحالة
+                if (isShuffling)
+                {
+                    floatingButton.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_stop));
+                    floatingButton.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#F44336"));
+                }
+                else
+                {
+                    floatingButton.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_play));
+                    floatingButton.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Toast.MakeText(this, "❌ خطأ في إنشاء الزر العائم: " + ex.Message, ToastLength.Long).Show();
+            Android.Util.Log.Error("MainActivity", "FloatingButton Error: " + ex.Message);
+        }
     }
 
     private string FormatNumbers(List<int> numbers)
@@ -160,7 +206,43 @@ public class MainActivity : Activity
         public override void OnReceive(Context context, Intent intent)
         {
             var activity = (MainActivity)context;
-            if (intent.Action == "START_SHUFFLING")
+            
+            if (intent.Action == "TOGGLE_SHUFFLING")
+            {
+                // ✅ تبديل حالة الخلط
+                activity.isShuffling = !activity.isShuffling;
+                
+                if (activity.isShuffling)
+                {
+                    activity.cancellationToken = new System.Threading.CancellationTokenSource();
+                    activity.StartFastShuffling(activity.cancellationToken.Token);
+                    Toast.MakeText(activity, "▶ بدء الخلط", ToastLength.Short).Show();
+                    
+                    // ✅ تغيير أيقونة الزر العائم
+                    if (activity.floatingButton != null)
+                    {
+                        activity.floatingButton.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(activity, Resource.Drawable.ic_stop));
+                        activity.floatingButton.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#F44336"));
+                    }
+                }
+                else
+                {
+                    activity.cancellationToken.Cancel();
+                    activity.currentNumbers = new List<int>(activity.originalNumbers);
+                    activity.RunOnUiThread(() => {
+                        activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
+                        Toast.MakeText(activity, "⏹ تم إيقاف الخلط", ToastLength.Short).Show();
+                    });
+                    
+                    // ✅ تغيير أيقونة الزر العائم
+                    if (activity.floatingButton != null)
+                    {
+                        activity.floatingButton.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(activity, Resource.Drawable.ic_play));
+                        activity.floatingButton.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
+                    }
+                }
+            }
+            else if (intent.Action == "START_SHUFFLING")
             {
                 activity.isShuffling = true;
                 activity.cancellationToken = new System.Threading.CancellationTokenSource();
@@ -189,6 +271,13 @@ public class MainActivity : Activity
                     activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
                     Toast.MakeText(activity, "✅ تم العثور على الرقم المستهدف", ToastLength.Short).Show();
                 });
+                
+                // ✅ تغيير أيقونة الزر العائم
+                if (activity.floatingButton != null)
+                {
+                    activity.floatingButton.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(activity, Resource.Drawable.ic_play));
+                    activity.floatingButton.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
+                }
             }
         }
     }
@@ -232,8 +321,6 @@ public class MainActivity : Activity
                 {
                     RunOnUiThread(() => {
                         Toast.MakeText(this, "🎯 تم العثور على الرقم: " + currentNumbers[0], ToastLength.Short).Show();
-                        Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
-                        SendBroadcast(colorIntent);
                     });
                     
                     isShuffling = false;
@@ -249,6 +336,13 @@ public class MainActivity : Activity
                     });
                     
                     PerformTapOnCenter();
+                    
+                    // ✅ تغيير أيقونة الزر العائم
+                    if (floatingButton != null)
+                    {
+                        floatingButton.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_play));
+                        floatingButton.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
+                    }
                     
                     await System.Threading.Tasks.Task.Delay(1000);
                     
@@ -317,5 +411,15 @@ public class MainActivity : Activity
             UnregisterReceiver(shuffleReceiver);
         }
         catch (Exception) { }
+        
+        // ✅ إزالة الزر العائم عند إغلاق التطبيق
+        if (floatingButton != null && floatingButton.Parent != null)
+        {
+            var rootLayout = floatingButton.Parent as ViewGroup;
+            if (rootLayout != null)
+            {
+                rootLayout.RemoveView(floatingButton);
+            }
+        }
     }
 }
