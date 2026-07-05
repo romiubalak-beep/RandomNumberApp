@@ -9,9 +9,9 @@ using Android.Provider;
 using System;
 
 [Service]
-public class FloatingButtonService : Service, View.IOnTouchListener
+public class FloatingButtonService : Service
 {
-    private Android.Views.WindowManager windowManager; // ✅ تغيير إلى WindowManager
+    private Android.Views.WindowManager windowManager;
     private View floatingView;
     private Button floatingButton;
     private bool isCreated = false;
@@ -57,7 +57,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
             floatingButton.SetTextColor(Color.White);
             floatingButton.SetPadding(20, 20, 20, 20);
-            floatingButton.SetOnTouchListener(this);
+            floatingButton.SetOnTouchListener(new FloatingButtonTouchListener(this));
             
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
@@ -71,7 +71,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             container.AddView(floatingButton);
             floatingView = container;
             
-            // ✅ استخدام WindowManager بدلاً من IWindowManager
+            // ✅ استخدام WindowManager من Context
             windowManager = (Android.Views.WindowManager)GetSystemService(WindowService);
             
             if (windowManager == null)
@@ -80,28 +80,18 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return;
             }
 
-            // ✅ تحديد نوع النافذة حسب إصدار Android
-            int windowType;
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-            {
-                windowType = (int)WindowManagerTypes.ApplicationOverlay;
-            }
-            else
-            {
-                windowType = (int)WindowManagerTypes.Phone;
-            }
-            
+            // ✅ استخدام WindowManagerTypes و WindowManagerFlags مباشرة
             var layoutParams = new WindowManagerLayoutParams(
                 180, 180,
-                windowType,
-                (int)WindowManagerFlags.NotFocusable | (int)WindowManagerFlags.Fullscreen,
+                WindowManagerTypes.ApplicationOverlay,
+                WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
                 Format.Translucent);
             
-            layoutParams.Gravity = (int)GravityFlags.Top | (int)GravityFlags.Right;
+            layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
             layoutParams.X = 50;
             layoutParams.Y = 200;
             
-            // ✅ إضافة الزر باستخدام WindowManager.AddView
+            // ✅ إضافة الزر
             windowManager.AddView(floatingView, layoutParams);
             isCreated = true;
             Toast.MakeText(this, "✅ الزر العائم يعمل فوق التطبيقات", ToastLength.Short).Show();
@@ -140,44 +130,56 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    public bool OnTouch(View v, MotionEvent e)
+    // ✅ كلاس مخصص للتعامل مع اللمس
+    private class FloatingButtonTouchListener : Java.Lang.Object, View.IOnTouchListener
     {
-        if (windowManager == null || floatingView == null)
-            return false;
+        private FloatingButtonService service;
 
-        var layoutParams = (WindowManagerLayoutParams)floatingView.LayoutParameters;
-
-        switch (e.Action)
+        public FloatingButtonTouchListener(FloatingButtonService service)
         {
-            case MotionEventActions.Down:
-                initialX = layoutParams.X;
-                initialY = layoutParams.Y;
-                initialTouchX = e.RawX;
-                initialTouchY = e.RawY;
-                isDragging = false;
-                return true;
-
-            case MotionEventActions.Move:
-                float deltaX = e.RawX - initialTouchX;
-                float deltaY = e.RawY - initialTouchY;
-                
-                if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
-                {
-                    isDragging = true;
-                }
-                
-                if (isDragging)
-                {
-                    layoutParams.X = initialX + (int)deltaX;
-                    layoutParams.Y = initialY + (int)deltaY;
-                    windowManager.UpdateViewLayout(floatingView, layoutParams);
-                }
-                return true;
-
-            case MotionEventActions.Up:
-                return true;
+            this.service = service;
         }
-        return false;
+
+        public bool OnTouch(View? v, MotionEvent? e)
+        {
+            if (service.windowManager == null || service.floatingView == null || e == null)
+                return false;
+
+            var layoutParams = (WindowManagerLayoutParams)service.floatingView.LayoutParameters;
+            if (layoutParams == null) return false;
+
+            switch (e.Action)
+            {
+                case MotionEventActions.Down:
+                    service.initialX = layoutParams.X;
+                    service.initialY = layoutParams.Y;
+                    service.initialTouchX = e.RawX;
+                    service.initialTouchY = e.RawY;
+                    service.isDragging = false;
+                    return true;
+
+                case MotionEventActions.Move:
+                    float deltaX = e.RawX - service.initialTouchX;
+                    float deltaY = e.RawY - service.initialTouchY;
+                    
+                    if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
+                    {
+                        service.isDragging = true;
+                    }
+                    
+                    if (service.isDragging)
+                    {
+                        layoutParams.X = service.initialX + (int)deltaX;
+                        layoutParams.Y = service.initialY + (int)deltaY;
+                        service.windowManager.UpdateViewLayout(service.floatingView, layoutParams);
+                    }
+                    return true;
+
+                case MotionEventActions.Up:
+                    return true;
+            }
+            return false;
+        }
     }
 
     public override void OnDestroy()
