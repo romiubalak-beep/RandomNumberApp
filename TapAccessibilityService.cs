@@ -21,7 +21,8 @@ public class TapAccessibilityService : AccessibilityService
     {
         try
         {
-            var path = new Path();
+            // ✅ استخدام Android.Graphics.Path بدلاً من System.IO.Path
+            var path = new Android.Graphics.Path();
             path.MoveTo(x, y);
             
             var builder = new GestureDescription.Builder();
