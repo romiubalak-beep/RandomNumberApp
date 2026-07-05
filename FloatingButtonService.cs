@@ -4,8 +4,6 @@ using Android.OS;
 using Android.Views;
 using Android.Graphics;
 using Android.Content;
-using Android.Runtime;
-using Android.Provider;
 using System;
 
 [Service]
@@ -19,7 +17,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
     private bool isDragging = false;
-    private bool isServiceStarted = false;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -38,6 +35,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     {
         try
         {
+            // ✅ التحقق من صلاحية العرض فوق التطبيقات
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M && !Settings.CanDrawOverlays(this))
             {
                 Intent intent = new Intent(Settings.ActionManageOverlayPermission,
@@ -58,7 +56,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
-                    ToggleService();
+                    // ✅ تبديل حالة الخلط
+                    ToggleShuffling();
                 }
                 isDragging = false;
             };
@@ -67,6 +66,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             container.AddView(floatingButton);
             floatingView = container;
             
+            // ✅ الحصول على WindowManager باستخدام JavaCast (كما في المشروع المرجعي) [citation:11]
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             if (windowManager == null)
             {
@@ -74,9 +74,20 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return;
             }
 
+            // ✅ تحديد نوع النافذة حسب إصدار Android [citation:9]
+            WindowManagerTypes windowType;
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+            {
+                windowType = WindowManagerTypes.ApplicationOverlay;
+            }
+            else
+            {
+                windowType = WindowManagerTypes.Phone;
+            }
+
             var layoutParams = new WindowManagerLayoutParams(
                 180, 180,
-                WindowManagerTypes.ApplicationOverlay,
+                windowType,
                 WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
                 Format.Translucent);
             
@@ -95,19 +106,14 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    private void ToggleService()
+    private void ToggleShuffling()
     {
-        isServiceStarted = !isServiceStarted;
-        
-        if (isServiceStarted)
+        if (floatingButton.Text == "▶")
         {
             floatingButton.Text = "⏹";
             floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
             SendBroadcast(new Intent("START_SHUFFLING"));
             Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-            
-            Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
-            StartService(tapServiceIntent);
         }
         else
         {
@@ -115,12 +121,10 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
             SendBroadcast(new Intent("STOP_SHUFFLING"));
             Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-            
-            Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
-            StopService(tapServiceIntent);
         }
     }
 
+    // ✅ تنفيذ واجهة IOnTouchListener للسحب [citation:2][citation:4]
     public bool OnTouch(View v, MotionEvent e)
     {
         if (windowManager == null || floatingView == null)
