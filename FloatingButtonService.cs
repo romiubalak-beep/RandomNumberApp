@@ -71,30 +71,27 @@ public class FloatingButtonService : Service
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ وظيفة الزر العائم
+            // ✅ وظيفة الزر العائم - الحل النهائي
             floatingButton.Click += (s, e) => {
                 isShuffling = !isShuffling;
-                Console.WriteLine("🔄 تم الضغط على الزر العائم - isShuffling: " + isShuffling);
                 
                 if (isShuffling)
                 {
-                    // ✅ بدء الخلط
                     floatingButton.Text = "⏹";
                     floatingButton.SetBackgroundColor(Color.Green);
                     Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+                    
+                    // ✅ بدء الخلط
                     Intent startIntent = new Intent("START_SHUFFLING");
                     SendBroadcast(startIntent);
-                    
-                    // ✅ إرسال اختبار خلط (للتأكد من أن الرسالة تصل)
-                    Intent testIntent = new Intent("TEST_SHUFFLE");
-                    SendBroadcast(testIntent);
                 }
                 else
                 {
-                    // ✅ إيقاف الخلط
                     floatingButton.Text = "▶";
                     floatingButton.SetBackgroundColor(Color.Blue);
                     Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+                    
+                    // ✅ إيقاف الخلط
                     Intent stopIntent = new Intent("STOP_SHUFFLING");
                     SendBroadcast(stopIntent);
                 }
