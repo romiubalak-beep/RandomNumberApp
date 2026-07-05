@@ -71,7 +71,7 @@ public class FloatingButtonService : Service
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ وظيفة الزر العائم - مع طباعة للتأكد من الضغط
+            // ✅ وظيفة الزر العائم
             floatingButton.Click += (s, e) => {
                 isShuffling = !isShuffling;
                 Console.WriteLine("🔄 تم الضغط على الزر العائم - isShuffling: " + isShuffling);
@@ -84,6 +84,10 @@ public class FloatingButtonService : Service
                     Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
                     Intent startIntent = new Intent("START_SHUFFLING");
                     SendBroadcast(startIntent);
+                    
+                    // ✅ إرسال اختبار خلط (للتأكد من أن الرسالة تصل)
+                    Intent testIntent = new Intent("TEST_SHUFFLE");
+                    SendBroadcast(testIntent);
                 }
                 else
                 {
@@ -183,13 +187,11 @@ public class FloatingButtonService : Service
     {
         if (floatingButton != null && isCreated)
         {
-            // ✅ عند العثور على الرقم المستهدف، إعادة الزر إلى حالة الإيقاف
             floatingButton.Text = "▶";
             floatingButton.SetBackgroundColor(Color.Blue);
             isShuffling = false;
             Toast.MakeText(this, "✅ تم العثور على الرقم - الخلط متوقف", ToastLength.Short).Show();
             
-            // ✅ إرسال إشارة إيقاف الخلط
             Intent stopIntent = new Intent("STOP_SHUFFLING");
             SendBroadcast(stopIntent);
         }
