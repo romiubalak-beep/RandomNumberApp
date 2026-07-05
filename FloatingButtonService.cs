@@ -4,8 +4,8 @@ using Android.OS;
 using Android.Views;
 using Android.Graphics;
 using Android.Content;
-using Android.Provider; // ✅ إضافة this
-using Android.Runtime; // ✅ إضافة this
+using Android.Provider;
+using Android.Runtime;
 using System;
 
 [Service]
@@ -37,7 +37,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     {
         try
         {
-            // ✅ استخدام Android.Provider.Settings
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M && !Android.Provider.Settings.CanDrawOverlays(this))
             {
                 Intent intent = new Intent(Android.Provider.Settings.ActionManageOverlayPermission,
@@ -55,6 +54,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.SetPadding(20, 20, 20, 20);
             floatingButton.SetOnTouchListener(this);
             
+            // ✅ تأكد من أن حدث الضغط يعمل
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
@@ -67,7 +67,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             container.AddView(floatingButton);
             floatingView = container;
             
-            // ✅ استخدام JavaCast بشكل صحيح
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             if (windowManager == null)
             {
@@ -97,6 +96,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             
             windowManager.AddView(floatingView, layoutParams);
             isCreated = true;
+            
+            // ✅ رسالة تأكيد للمستخدم
             Toast.MakeText(this, "✅ الزر العائم يعمل فوق التطبيقات", ToastLength.Short).Show();
         }
         catch (Exception ex)
@@ -108,19 +109,38 @@ public class FloatingButtonService : Service, View.IOnTouchListener
 
     private void ToggleShuffling()
     {
-        if (floatingButton.Text == "▶")
+        try
         {
-            floatingButton.Text = "⏹";
-            floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
-            SendBroadcast(new Intent("START_SHUFFLING"));
-            Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+            if (floatingButton.Text == "▶")
+            {
+                floatingButton.Text = "⏹";
+                floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
+                SendBroadcast(new Intent("START_SHUFFLING"));
+                
+                // ✅ رسالة تأكيد
+                Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+                
+                // ✅ تشغيل خدمة إمكانية الوصول
+                Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
+                StartService(tapServiceIntent);
+            }
+            else
+            {
+                floatingButton.Text = "▶";
+                floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+                SendBroadcast(new Intent("STOP_SHUFFLING"));
+                
+                // ✅ رسالة تأكيد
+                Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+                
+                // ✅ إيقاف خدمة إمكانية الوصول
+                Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
+                StopService(tapServiceIntent);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            floatingButton.Text = "▶";
-            floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
-            SendBroadcast(new Intent("STOP_SHUFFLING"));
-            Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+            Android.Util.Log.Error("FloatingService", "ToggleShuffling Error: " + ex.Message);
         }
     }
 
