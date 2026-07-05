@@ -76,6 +76,7 @@ public class FloatingButtonService : Service
                 isShuffling = !isShuffling;
                 if (isShuffling)
                 {
+                    // ✅ بدء الخلط
                     floatingButton.Text = "⏹";
                     floatingButton.SetBackgroundColor(Color.Green);
                     Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
@@ -84,6 +85,7 @@ public class FloatingButtonService : Service
                 }
                 else
                 {
+                    // ✅ إيقاف الخلط
                     floatingButton.Text = "▶";
                     floatingButton.SetBackgroundColor(Color.Blue);
                     Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
@@ -179,11 +181,13 @@ public class FloatingButtonService : Service
     {
         if (floatingButton != null && isCreated)
         {
+            // ✅ عند العثور على الرقم المستهدف، إعادة الزر إلى حالة الإيقاف
             floatingButton.Text = "▶";
             floatingButton.SetBackgroundColor(Color.Blue);
             isShuffling = false;
             Toast.MakeText(this, "✅ تم العثور على الرقم - الخلط متوقف", ToastLength.Short).Show();
             
+            // ✅ إرسال إشارة إيقاف الخلط
             Intent stopIntent = new Intent("STOP_SHUFFLING");
             SendBroadcast(stopIntent);
         }
