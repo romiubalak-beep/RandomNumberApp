@@ -11,12 +11,11 @@ using System;
 [Service]
 public class FloatingButtonService : Service, View.IOnTouchListener
 {
-    private IWindowManager windowManager;
+    private Android.Views.WindowManager windowManager; // ✅ تغيير إلى WindowManager
     private View floatingView;
     private Button floatingButton;
     private bool isCreated = false;
     
-    // ✅ متغيرات السحب
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
     private bool isDragging = false;
@@ -40,7 +39,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     {
         try
         {
-            // ✅ التحقق من صلاحية العرض فوق التطبيقات
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
                 if (!Settings.CanDrawOverlays(this))
@@ -53,36 +51,28 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 }
             }
 
-            // ✅ إنشاء الزر العائم
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
             floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 20);
             floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
             floatingButton.SetTextColor(Color.White);
-            
-            // ✅ جعل الزر دائرياً
             floatingButton.SetPadding(20, 20, 20, 20);
-            
-            // ✅ تعيين مستمع اللمس (للسحب)
             floatingButton.SetOnTouchListener(this);
             
-            // ✅ حدث الضغط
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
-                    // ✅ تبديل حالة الخلط
                     ToggleShuffling();
                 }
                 isDragging = false;
             };
             
-            // ✅ وضع الزر في Layout
             LinearLayout container = new LinearLayout(this);
             container.AddView(floatingButton);
             floatingView = container;
             
-            // ✅ الحصول على WindowManager
-            windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
+            // ✅ استخدام WindowManager بدلاً من IWindowManager
+            windowManager = (Android.Views.WindowManager)GetSystemService(WindowService);
             
             if (windowManager == null)
             {
@@ -91,28 +81,27 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             }
 
             // ✅ تحديد نوع النافذة حسب إصدار Android
-            WindowManagerTypes windowType;
+            int windowType;
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
-                windowType = WindowManagerTypes.ApplicationOverlay;
+                windowType = (int)WindowManagerTypes.ApplicationOverlay;
             }
             else
             {
-                windowType = WindowManagerTypes.Phone;
+                windowType = (int)WindowManagerTypes.Phone;
             }
             
-            // ✅ إعدادات النافذة العائمة
             var layoutParams = new WindowManagerLayoutParams(
-                180, 180, // حجم الزر
+                180, 180,
                 windowType,
-                WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
+                (int)WindowManagerFlags.NotFocusable | (int)WindowManagerFlags.Fullscreen,
                 Format.Translucent);
             
-            layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
+            layoutParams.Gravity = (int)GravityFlags.Top | (int)GravityFlags.Right;
             layoutParams.X = 50;
             layoutParams.Y = 200;
             
-            // ✅ إضافة الزر
+            // ✅ إضافة الزر باستخدام WindowManager.AddView
             windowManager.AddView(floatingView, layoutParams);
             isCreated = true;
             Toast.MakeText(this, "✅ الزر العائم يعمل فوق التطبيقات", ToastLength.Short).Show();
@@ -124,12 +113,10 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    // ✅ دالة تبديل حالة الخلط
     private void ToggleShuffling()
     {
         try
         {
-            // ✅ التحقق من حالة الزر
             if (floatingButton.Text == "▶")
             {
                 floatingButton.Text = "⏹";
@@ -153,7 +140,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    // ✅ تنفيذ واجهة IOnTouchListener (للسحب)
     public bool OnTouch(View v, MotionEvent e)
     {
         if (windowManager == null || floatingView == null)
