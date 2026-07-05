@@ -53,27 +53,6 @@ public class MainActivity : Activity
         textView.TextSize = 14;
         textView.SetTextColor(Color.Black);
         
-        // ✅ زر لاختبار الخلط يدوياً
-        Button testButton = new Button(this);
-        testButton.Text = "🧪 اختبار الخلط (يدوي)";
-        testButton.SetTextColor(Color.White);
-        testButton.SetBackgroundColor(Color.DarkOrange);
-        testButton.Click += (s, e) => {
-            // ✅ خلط يدوي لمرة واحدة
-            int n = currentNumbers.Count;
-            for (int i = n - 1; i > 0; i--)
-            {
-                byte[] bytes = new byte[4];
-                rng.GetBytes(bytes);
-                int j = Math.Abs(BitConverter.ToInt32(bytes, 0) % (i + 1));
-                int temp = currentNumbers[i];
-                currentNumbers[i] = currentNumbers[j];
-                currentNumbers[j] = temp;
-            }
-            textView.Text = FormatNumbers(currentNumbers);
-            Toast.MakeText(this, "✅ تم الخلط اليدوي!", ToastLength.Short).Show();
-        };
-        
         Button resetButton = new Button(this);
         resetButton.Text = "🔄 إظهار الأرقام الأصلية";
         resetButton.SetTextColor(Color.White);
@@ -85,20 +64,13 @@ public class MainActivity : Activity
         };
         
         layout.AddView(textView);
-        layout.AddView(testButton);
         layout.AddView(resetButton);
         
         LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MatchParent,
             LinearLayout.LayoutParams.WrapContent);
-        params1.SetMargins(0, 0, 0, 10);
+        params1.SetMargins(0, 0, 0, 20);
         textView.LayoutParameters = params1;
-        
-        LinearLayout.LayoutParams params2 = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MatchParent,
-            LinearLayout.LayoutParams.WrapContent);
-        params2.SetMargins(0, 0, 0, 10);
-        testButton.LayoutParameters = params2;
         
         SetContentView(layout);
         
@@ -108,7 +80,6 @@ public class MainActivity : Activity
         filter.AddAction("STOP_SHUFFLING");
         filter.AddAction("PERFORM_TAP");
         filter.AddAction("FOUND_TARGET");
-        filter.AddAction("TEST_SHUFFLE");
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -191,7 +162,6 @@ public class MainActivity : Activity
             var activity = (MainActivity)context;
             if (intent.Action == "START_SHUFFLING")
             {
-                // ✅ بدء الخلط
                 activity.isShuffling = true;
                 activity.cancellationToken = new System.Threading.CancellationTokenSource();
                 activity.StartFastShuffling(activity.cancellationToken.Token);
@@ -199,7 +169,6 @@ public class MainActivity : Activity
             }
             else if (intent.Action == "STOP_SHUFFLING")
             {
-                // ✅ إيقاف الخلط
                 activity.isShuffling = false;
                 activity.cancellationToken.Cancel();
                 activity.currentNumbers = new List<int>(activity.originalNumbers);
@@ -219,24 +188,6 @@ public class MainActivity : Activity
                 activity.RunOnUiThread(() => {
                     activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
                     Toast.MakeText(activity, "✅ تم العثور على الرقم المستهدف", ToastLength.Short).Show();
-                });
-            }
-            else if (intent.Action == "TEST_SHUFFLE")
-            {
-                // ✅ خلط يدوي من الزر العائم
-                int n = activity.currentNumbers.Count;
-                for (int i = n - 1; i > 0; i--)
-                {
-                    byte[] bytes = new byte[4];
-                    activity.rng.GetBytes(bytes);
-                    int j = Math.Abs(BitConverter.ToInt32(bytes, 0) % (i + 1));
-                    int temp = activity.currentNumbers[i];
-                    activity.currentNumbers[i] = activity.currentNumbers[j];
-                    activity.currentNumbers[j] = temp;
-                }
-                activity.RunOnUiThread(() => {
-                    activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
-                    Toast.MakeText(activity, "🧪 تم الخلط من الزر العائم!", ToastLength.Short).Show();
                 });
             }
         }
@@ -262,7 +213,6 @@ public class MainActivity : Activity
         {
             while (isShuffling && !token.IsCancellationRequested)
             {
-                // ✅ خلط الأرقام
                 int n = currentNumbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
@@ -274,12 +224,10 @@ public class MainActivity : Activity
                     currentNumbers[j] = temp;
                 }
                 
-                // ✅ تحديث الواجهة
                 RunOnUiThread(() => {
                     textView.Text = FormatNumbers(currentNumbers);
                 });
                 
-                // ✅ التحقق من الرقم المستهدف
                 if (currentNumbers[0] == 1 || currentNumbers[0] == 2 || currentNumbers[0] == 3)
                 {
                     RunOnUiThread(() => {
@@ -288,7 +236,6 @@ public class MainActivity : Activity
                         SendBroadcast(colorIntent);
                     });
                     
-                    // ✅ إيقاف الخلط
                     isShuffling = false;
                     
                     Intent foundIntent = new Intent("FOUND_TARGET");
