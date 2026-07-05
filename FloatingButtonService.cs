@@ -21,7 +21,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     private bool isDragging = false;
     private bool isServiceStarted = false;
 
-    // ✅ معرف الإشعار
     private const int NOTIFICATION_ID = 1001;
     private const string CHANNEL_ID = "randomapp_channel";
 
@@ -34,24 +33,20 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     {
         base.OnCreate();
         
-        // ✅ إنشاء قناة الإشعارات (لـ Android 8+)
         CreateNotificationChannel();
-        
-        // ✅ بدء Foreground Service
         StartForeground(NOTIFICATION_ID, CreateNotification());
         
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(CreateFloatingButton, 1500);
     }
 
-    // ✅ إنشاء قناة الإشعارات
     private void CreateNotificationChannel()
     {
         if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
         {
             var channel = new NotificationChannel(
                 CHANNEL_ID,
-                Resources.GetString(Resource.String.notification_channel_name),
+                "RandomApp الخدمة الخلفية",
                 NotificationImportance.Low)
             {
                 Description = "إشعارات خدمة الخلفية",
@@ -63,7 +58,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    // ✅ إنشاء الإشعار
     private Notification CreateNotification()
     {
         var intent = new Intent(this, typeof(MainActivity));
@@ -71,12 +65,12 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         var pendingIntent = PendingIntent.GetActivity(this, 0, intent, PendingIntentFlags.Immutable);
 
         var builder = new Notification.Builder(this, CHANNEL_ID)
-            .SetContentTitle(Resources.GetString(Resource.String.notification_title))
-            .SetContentText(Resources.GetString(Resource.String.notification_text))
-            .SetSmallIcon(Android.Resource.Drawable.IcMenuCamera) // ✅ أيقونة مؤقتة
+            .SetContentTitle("RandomApp يعمل")
+            .SetContentText("الزر العائم يعمل في الخلفية")
+            .SetSmallIcon(Android.Resource.Drawable.IcMenuCamera)
             .SetContentIntent(pendingIntent)
             .SetOngoing(true)
-            .SetPriority(NotificationPriority.Low);
+            .SetPriority((int)NotificationPriority.Low);
 
         return builder.Build();
     }
@@ -156,7 +150,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
             StartService(tapServiceIntent);
             
-            // ✅ تحديث الإشعار
             UpdateNotification("▶ الخلط قيد التشغيل");
         }
         else
@@ -169,20 +162,18 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
             StopService(tapServiceIntent);
             
-            // ✅ تحديث الإشعار
             UpdateNotification("⏹ الخلط متوقف");
         }
     }
 
-    // ✅ تحديث الإشعار
     private void UpdateNotification(string status)
     {
         var builder = new Notification.Builder(this, CHANNEL_ID)
-            .SetContentTitle(Resources.GetString(Resource.String.notification_title))
+            .SetContentTitle("RandomApp يعمل")
             .SetContentText(status)
             .SetSmallIcon(Android.Resource.Drawable.IcMenuCamera)
             .SetOngoing(true)
-            .SetPriority(NotificationPriority.Low);
+            .SetPriority((int)NotificationPriority.Low);
 
         var notificationManager = (NotificationManager)GetSystemService(NotificationService);
         notificationManager.Notify(NOTIFICATION_ID, builder.Build());
@@ -241,7 +232,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             }
         }
         
-        // ✅ إيقاف Foreground Service
         StopForeground(StopForegroundFlags.Remove);
     }
 }
