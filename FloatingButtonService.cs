@@ -19,7 +19,6 @@ public class FloatingButtonService : Service
     private BroadcastReceiver receiver;
     private bool isShuffling = false;
     private bool isPaused = false;
-    private BroadcastReceiver statusReceiver;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -35,9 +34,10 @@ public class FloatingButtonService : Service
             CreateFloatingButton();
         }, 2000);
         
-        // استقبال إشارات تغيير اللون
         receiver = new FloatingButtonReceiver();
-        IntentFilter filter = new IntentFilter("CHANGE_FLOATING_BUTTON_COLOR");
+        IntentFilter filter = new IntentFilter();
+        filter.AddAction("CHANGE_FLOATING_BUTTON_COLOR");
+        filter.AddAction("FOUND_TARGET"); // ✅ استقبال إشارة العثور على الرقم المستهدف
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -46,19 +46,6 @@ public class FloatingButtonService : Service
         else
         {
             RegisterReceiver(receiver, filter);
-        }
-        
-        // استقبال إشارات حالة الخلط
-        statusReceiver = new StatusReceiver();
-        IntentFilter statusFilter = new IntentFilter("UPDATE_FLOATING_STATUS");
-        
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
-        {
-            RegisterReceiver(statusReceiver, statusFilter, ReceiverFlags.NotExported);
-        }
-        else
-        {
-            RegisterReceiver(statusReceiver, statusFilter);
         }
     }
 
@@ -84,31 +71,25 @@ public class FloatingButtonService : Service
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ وظيفة الزر العائم: تشغيل/إيقاف الخلط
             floatingButton.Click += (s, e) => {
-                if (!isPaused)
+                // ✅ التحكم بالخلط بغض النظر عن حالة isPaused
+                isShuffling = !isShuffling;
+                if (isShuffling)
                 {
-                    isShuffling = !isShuffling;
-                    if (isShuffling)
-                    {
-                        floatingButton.Text = "⏹";
-                        floatingButton.SetBackgroundColor(Color.Green);
-                        Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-                        Intent startIntent = new Intent("START_SHUFFLING");
-                        SendBroadcast(startIntent);
-                    }
-                    else
-                    {
-                        floatingButton.Text = "▶";
-                        floatingButton.SetBackgroundColor(Color.Blue);
-                        Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-                        Intent stopIntent = new Intent("STOP_SHUFFLING");
-                        SendBroadcast(stopIntent);
-                    }
+                    floatingButton.Text = "⏹";
+                    floatingButton.SetBackgroundColor(Color.Green);
+                    Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+                    Intent startIntent = new Intent("START_SHUFFLING");
+                    SendBroadcast(startIntent);
+                    isPaused = false; // ✅ إلغاء حالة التوقف المؤقت
                 }
                 else
                 {
-                    Toast.MakeText(this, "⏳ توقف مؤقت بسبب العثور على الرقم", ToastLength.Short).Show();
+                    floatingButton.Text = "▶";
+                    floatingButton.SetBackgroundColor(Color.Blue);
+                    Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+                    Intent stopIntent = new Intent("STOP_SHUFFLING");
+                    SendBroadcast(stopIntent);
                 }
             };
             
@@ -154,83 +135,38 @@ public class FloatingButtonService : Service
         }
     }
 
-    private class StatusReceiver : BroadcastReceiver
-    {
-        public override void OnReceive(Context context, Intent intent)
-        {
-            if (intent.Action == "UPDATE_FLOATING_STATUS")
-            {
-                try
-                {
-                    var service = (FloatingButtonService)context;
-                    bool isRunning = intent.GetBooleanExtra("isRunning", false);
-                    service.UpdateFloatingButtonStatus(isRunning);
-                }
-                catch (Exception ex)
-                {
-                    Android.Util.Log.Error("FloatingService", "StatusReceiver Error: " + ex.Message);
-                }
-            }
-        }
-    }
-
-    private void UpdateFloatingButtonStatus(bool isRunning)
-    {
-        if (floatingButton != null && isCreated)
-        {
-            try
-            {
-                if (isRunning)
-                {
-                    floatingButton.Text = "⏹";
-                    floatingButton.SetBackgroundColor(Color.Green);
-                    isShuffling = true;
-                }
-                else
-                {
-                    floatingButton.Text = "▶";
-                    floatingButton.SetBackgroundColor(Color.Blue);
-                    isShuffling = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Android.Util.Log.Error("FloatingService", "UpdateStatus Error: " + ex.Message);
-            }
-        }
-    }
-
-    public void PauseShuffling(bool pause)
-    {
-        isPaused = pause;
-        if (pause)
-        {
-            floatingButton.Text = "⏸";
-            floatingButton.SetBackgroundColor(Color.Orange);
-        }
-        else
-        {
-            floatingButton.Text = "▶";
-            floatingButton.SetBackgroundColor(Color.Blue);
-        }
-    }
-
     private class FloatingButtonReceiver : BroadcastReceiver
     {
         public override void OnReceive(Context context, Intent intent)
         {
+            var service = (FloatingButtonService)context;
+            
             if (intent.Action == "CHANGE_FLOATING_BUTTON_COLOR")
             {
-                try
-                {
-                    var service = (FloatingButtonService)context;
-                    service.ChangeButtonColor();
-                }
-                catch (Exception ex)
-                {
-                    Android.Util.Log.Error("FloatingService", "Receiver Error: " + ex.Message);
-                }
+                service.ChangeButtonColor();
             }
+            else if (intent.Action == "FOUND_TARGET")
+            {
+                // ✅ عند العثور على الرقم المستهدف، تغيير حالة الزر العائم
+                service.OnTargetFound();
+            }
+        }
+    }
+
+    private void OnTargetFound()
+    {
+        if (floatingButton != null && isCreated)
+        {
+            // ✅ تغيير الزر العائم إلى حالة "توقف مؤقت"
+            floatingButton.Text = "⏸";
+            floatingButton.SetBackgroundColor(Color.Orange);
+            isPaused = true;
+            isShuffling = false;
+            Toast.MakeText(this, "⏸ توقف الخلط - تم العثور على الرقم المستهدف", ToastLength.Short).Show();
+            
+            // ✅ إرسال إشارة إيقاف الخلط
+            Intent stopIntent = new Intent("STOP_SHUFFLING");
+            SendBroadcast(stopIntent);
         }
     }
 
@@ -242,7 +178,7 @@ public class FloatingButtonService : Service
             {
                 if (isRed)
                 {
-                    floatingButton.SetBackgroundColor(Color.Green);
+                    floatingButton.SetBackgroundColor(Color.Blue);
                     isRed = false;
                 }
                 else
@@ -276,7 +212,6 @@ public class FloatingButtonService : Service
         try
         {
             UnregisterReceiver(receiver);
-            UnregisterReceiver(statusReceiver);
         }
         catch (Exception) { }
     }
