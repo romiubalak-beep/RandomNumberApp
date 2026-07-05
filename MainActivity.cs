@@ -20,7 +20,7 @@ public class MainActivity : Activity
     private List<int> originalNumbers;
     private List<int> currentNumbers;
     private bool isShuffling = false;
-    private Button fabButton; // ✅ زر عائم بسيط (بدون مكتبات)
+    private Button fabButton;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -47,13 +47,11 @@ public class MainActivity : Activity
         // ✅ إنشاء الواجهة الرئيسية
         FrameLayout rootLayout = new FrameLayout(this);
         
-        // ✅ الواجهة الداخلية (LinearLayout)
         LinearLayout mainLayout = new LinearLayout(this);
         mainLayout.Orientation = Orientation.Vertical;
         mainLayout.SetPadding(50, 50, 50, 50);
         mainLayout.SetGravity(GravityFlags.Center);
         
-        // ✅ عرض الأرقام
         textView = new TextView(this);
         textView.Text = FormatNumbers(currentNumbers);
         textView.TextSize = 14;
@@ -80,7 +78,7 @@ public class MainActivity : Activity
         
         rootLayout.AddView(mainLayout);
         
-        // ✅ إنشاء زر عائم بسيط (Button)
+        // ✅ إنشاء زر عائم بسيط
         CreateFloatingButton(rootLayout);
         
         SetContentView(rootLayout);
@@ -102,7 +100,6 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة إنشاء زر عائم بسيط
     private void CreateFloatingButton(FrameLayout rootLayout)
     {
         fabButton = new Button(this);
@@ -112,10 +109,12 @@ public class MainActivity : Activity
         fabButton.SetTextColor(Color.White);
         fabButton.Click += FabButton_Click;
         
-        // ✅ إضافة الزر إلى الواجهة
+        // ✅ جعل الزر دائرياً
+        fabButton.SetPadding(20, 20, 20, 20);
+        
         var layoutParams = new FrameLayout.LayoutParams(
-            (int)(100 * Resources.DisplayMetrics.Density), // 100dp
-            (int)(100 * Resources.DisplayMetrics.Density)); // 100dp
+            (int)(80 * Resources.DisplayMetrics.Density),
+            (int)(80 * Resources.DisplayMetrics.Density));
         layoutParams.Gravity = GravityFlags.Bottom | GravityFlags.Right;
         layoutParams.BottomMargin = (int)(30 * Resources.DisplayMetrics.Density);
         layoutParams.RightMargin = (int)(30 * Resources.DisplayMetrics.Density);
@@ -205,11 +204,11 @@ public class MainActivity : Activity
             var activity = (MainActivity)context;
             if (intent.Action == "START_SHUFFLING")
             {
-                // تم البدء من الزر العائم الخارجي
+                // بدء الخلط من الزر العائم
             }
             else if (intent.Action == "STOP_SHUFFLING")
             {
-                // تم الإيقاف من الزر العائم الخارجي
+                // إيقاف الخلط من الزر العائم
             }
             else if (intent.Action == "PERFORM_TAP")
             {
