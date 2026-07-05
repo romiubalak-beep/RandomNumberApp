@@ -49,6 +49,7 @@ public class TapAccessibilityService : AccessibilityService
         }
     }
 
+    // ✅ تنفيذ النقرة باستخدام DispatchGesture [citation:9]
     public void PerformTap(int x, int y)
     {
         if (!isStarted)
