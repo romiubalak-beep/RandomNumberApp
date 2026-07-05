@@ -9,7 +9,7 @@ public class TapAccessibilityService : AccessibilityService
 {
     public override void OnAccessibilityEvent(AccessibilityEvent? e)
     {
-        // معالجة الأحداث
+        // معالجة الأحداث (مثل Klick'r)
     }
 
     public override void OnInterrupt()
@@ -17,6 +17,7 @@ public class TapAccessibilityService : AccessibilityService
         // مقاطعة
     }
 
+    // ✅ دالة تنفيذ النقرة (مثل Klick'r)
     public void PerformTap(int x, int y)
     {
         try
