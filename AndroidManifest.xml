@@ -21,11 +21,13 @@
         
         <service
             android:name=".FloatingButtonService"
-            android:stopWithTask="true" />
+            android:stopWithTask="true"
+            android:exported="false" />
             
         <service
             android:name=".TapAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
