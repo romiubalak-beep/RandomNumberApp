@@ -16,13 +16,10 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     private Button floatingButton;
     private bool isCreated = false;
     
-    // ✅ متغيرات السحب (مثل Klick'r)
+    // متغيرات للسحب
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
     private bool isDragging = false;
-
-    // ✅ متغيرات التحكم بالخلط
-    private bool isShuffling = false;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -32,42 +29,33 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     public override void OnCreate()
     {
         base.OnCreate();
-        
         Handler handler = new Handler(Looper.MainLooper);
-        handler.PostDelayed(() => {
-            CreateFloatingButton();
-        }, 1500);
+        handler.PostDelayed(CreateFloatingButton, 1500);
     }
 
     private void CreateFloatingButton()
     {
         try
         {
-            // ✅ صلاحية العرض فوق التطبيقات (مثل Klick'r)
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
+            // طلب صلاحية العرض فوق التطبيقات
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M && !Settings.CanDrawOverlays(this))
             {
-                if (!Settings.CanDrawOverlays(this))
-                {
-                    Intent intent = new Intent(Settings.ActionManageOverlayPermission,
-                        Android.Net.Uri.Parse("package:" + PackageName));
-                    intent.AddFlags(ActivityFlags.NewTask);
-                    StartActivity(intent);
-                    return;
-                }
+                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
+                    Android.Net.Uri.Parse("package:" + PackageName));
+                intent.AddFlags(ActivityFlags.NewTask);
+                StartActivity(intent);
+                return;
             }
 
-            // ✅ إنشاء الزر العائم (مثل Klick'r)
+            // إنشاء الزر
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
             floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 20);
             floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
             floatingButton.SetTextColor(Color.White);
             floatingButton.SetPadding(20, 20, 20, 20);
-            
-            // ✅ إضافة مستمع اللمس للسحب (مثل Klick'r)
             floatingButton.SetOnTouchListener(this);
             
-            // ✅ حدث الضغط (مثل Klick'r)
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
@@ -80,16 +68,13 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             container.AddView(floatingButton);
             floatingView = container;
             
-            // ✅ استخدام IWindowManager (مثل Klick'r)
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
-            
             if (windowManager == null)
             {
                 Toast.MakeText(this, "فشل في الحصول على WindowManager", ToastLength.Long).Show();
                 return;
             }
 
-            // ✅ إعدادات النافذة العائمة (مثل Klick'r)
             var layoutParams = new WindowManagerLayoutParams(
                 180, 180,
                 WindowManagerTypes.ApplicationOverlay,
@@ -111,42 +96,31 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    // ✅ دالة تبديل حالة الخلط (مثل Klick'r)
     private void ToggleShuffling()
     {
-        try
+        // هذه الدالة سترسل Broadcast لتشغيل أو إيقاف الخلط
+        if (floatingButton.Text == "▶")
         {
-            if (floatingButton.Text == "▶")
-            {
-                floatingButton.Text = "⏹";
-                floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
-                Intent startIntent = new Intent("START_SHUFFLING");
-                SendBroadcast(startIntent);
-                Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-            }
-            else
-            {
-                floatingButton.Text = "▶";
-                floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
-                Intent stopIntent = new Intent("STOP_SHUFFLING");
-                SendBroadcast(stopIntent);
-                Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-            }
+            floatingButton.Text = "⏹";
+            floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
+            SendBroadcast(new Intent("START_SHUFFLING"));
+            Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
         }
-        catch (Exception ex)
+        else
         {
-            Android.Util.Log.Error("FloatingService", "ToggleShuffling Error: " + ex.Message);
+            floatingButton.Text = "▶";
+            floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+            SendBroadcast(new Intent("STOP_SHUFFLING"));
+            Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
         }
     }
 
-    // ✅ تنفيذ واجهة IOnTouchListener للسحب (مثل Klick'r)
     public bool OnTouch(View v, MotionEvent e)
     {
         if (windowManager == null || floatingView == null)
             return false;
 
         var layoutParams = (WindowManagerLayoutParams)floatingView.LayoutParameters;
-
         switch (e.Action)
         {
             case MotionEventActions.Down:
@@ -160,12 +134,10 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             case MotionEventActions.Move:
                 float deltaX = e.RawX - initialTouchX;
                 float deltaY = e.RawY - initialTouchY;
-                
                 if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
                 {
                     isDragging = true;
                 }
-                
                 if (isDragging)
                 {
                     layoutParams.X = initialX + (int)deltaX;
