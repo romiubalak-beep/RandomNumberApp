@@ -20,22 +20,19 @@ public class TapAccessibilityService : AccessibilityService
         // مقاطعة
     }
 
-    [Java.Interop.Export]
+    [Export]
     public void PerformTap(int x, int y)
     {
         handler.Post(() =>
         {
             try
             {
-                // إنشاء مسار النقرة
                 var path = new Path();
                 path.MoveTo(x, y);
                 
-                // إنشاء وصف النقرة
                 var builder = new GestureDescription.Builder();
                 builder.AddStroke(new GestureDescription.StrokeDescription(path, 0, 1));
                 
-                // تنفيذ النقرة
                 DispatchGesture(builder.Build(), null, null);
             }
             catch (Exception ex)
