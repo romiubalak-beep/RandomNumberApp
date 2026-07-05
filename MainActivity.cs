@@ -245,7 +245,6 @@ public class MainActivity : Activity
             int centerX = size.X / 2;
             int centerY = size.Y / 2;
             
-            // محاولة استخدام AccessibilityService
             try
             {
                 Intent tapIntent = new Intent("PERFORM_TAP");
