@@ -6,7 +6,8 @@ using Android.Views;
 [Service(Permission = "android.permission.BIND_ACCESSIBILITY_SERVICE")]
 public class TapAccessibilityService : AccessibilityService
 {
-    public override void OnAccessibilityEvent(AccessibilityEvent e)
+    // ✅ استخدم AccessibilityEvent مع المسار الكامل
+    public override void OnAccessibilityEvent(AccessibilityEvent? e)
     {
         // معالجة الأحداث
     }
