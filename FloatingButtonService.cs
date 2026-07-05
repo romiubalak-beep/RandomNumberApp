@@ -21,6 +21,10 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     private bool isDragging = false;
     private bool isServiceStarted = false;
 
+    // ✅ معرف الإشعار
+    private const int NOTIFICATION_ID = 1001;
+    private const string CHANNEL_ID = "randomapp_channel";
+
     public override IBinder OnBind(Intent intent)
     {
         return null;
@@ -29,8 +33,52 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     public override void OnCreate()
     {
         base.OnCreate();
+        
+        // ✅ إنشاء قناة الإشعارات (لـ Android 8+)
+        CreateNotificationChannel();
+        
+        // ✅ بدء Foreground Service
+        StartForeground(NOTIFICATION_ID, CreateNotification());
+        
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(CreateFloatingButton, 1500);
+    }
+
+    // ✅ إنشاء قناة الإشعارات
+    private void CreateNotificationChannel()
+    {
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        {
+            var channel = new NotificationChannel(
+                CHANNEL_ID,
+                Resources.GetString(Resource.String.notification_channel_name),
+                NotificationImportance.Low)
+            {
+                Description = "إشعارات خدمة الخلفية",
+                LockscreenVisibility = NotificationVisibility.Private
+            };
+            
+            var manager = (NotificationManager)GetSystemService(NotificationService);
+            manager.CreateNotificationChannel(channel);
+        }
+    }
+
+    // ✅ إنشاء الإشعار
+    private Notification CreateNotification()
+    {
+        var intent = new Intent(this, typeof(MainActivity));
+        intent.AddFlags(ActivityFlags.SingleTop);
+        var pendingIntent = PendingIntent.GetActivity(this, 0, intent, PendingIntentFlags.Immutable);
+
+        var builder = new Notification.Builder(this, CHANNEL_ID)
+            .SetContentTitle(Resources.GetString(Resource.String.notification_title))
+            .SetContentText(Resources.GetString(Resource.String.notification_text))
+            .SetSmallIcon(Android.Resource.Drawable.IcMenuCamera) // ✅ أيقونة مؤقتة
+            .SetContentIntent(pendingIntent)
+            .SetOngoing(true)
+            .SetPriority(NotificationPriority.Low);
+
+        return builder.Build();
     }
 
     private void CreateFloatingButton()
@@ -107,6 +155,9 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             
             Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
             StartService(tapServiceIntent);
+            
+            // ✅ تحديث الإشعار
+            UpdateNotification("▶ الخلط قيد التشغيل");
         }
         else
         {
@@ -117,7 +168,24 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             
             Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
             StopService(tapServiceIntent);
+            
+            // ✅ تحديث الإشعار
+            UpdateNotification("⏹ الخلط متوقف");
         }
+    }
+
+    // ✅ تحديث الإشعار
+    private void UpdateNotification(string status)
+    {
+        var builder = new Notification.Builder(this, CHANNEL_ID)
+            .SetContentTitle(Resources.GetString(Resource.String.notification_title))
+            .SetContentText(status)
+            .SetSmallIcon(Android.Resource.Drawable.IcMenuCamera)
+            .SetOngoing(true)
+            .SetPriority(NotificationPriority.Low);
+
+        var notificationManager = (NotificationManager)GetSystemService(NotificationService);
+        notificationManager.Notify(NOTIFICATION_ID, builder.Build());
     }
 
     public bool OnTouch(View v, MotionEvent e)
@@ -172,5 +240,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 Android.Util.Log.Error("FloatingService", "RemoveView Error: " + ex.Message);
             }
         }
+        
+        // ✅ إيقاف Foreground Service
+        StopForeground(StopForegroundFlags.Remove);
     }
 }
