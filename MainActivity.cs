@@ -53,13 +53,11 @@ public class MainActivity : Activity
         textView.TextSize = 14;
         textView.SetTextColor(Color.Black);
         
-        // ✅ زر لاختبار الخلط يدوياً (للتأكد من أن الخلط يعمل)
         Button testButton = new Button(this);
         testButton.Text = "🧪 اختبار الخلط (يدوي)";
         testButton.SetTextColor(Color.White);
         testButton.SetBackgroundColor(Color.DarkOrange);
         testButton.Click += (s, e) => {
-            // ✅ خلط يدوي لمرة واحدة
             int n = currentNumbers.Count;
             for (int i = n - 1; i > 0; i--)
             {
@@ -108,7 +106,6 @@ public class MainActivity : Activity
         filter.AddAction("STOP_SHUFFLING");
         filter.AddAction("PERFORM_TAP");
         filter.AddAction("FOUND_TARGET");
-        filter.AddAction("TEST_SHUFFLE"); // ✅ إضافة إجراء اختبار
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -221,24 +218,6 @@ public class MainActivity : Activity
                     Toast.MakeText(activity, "✅ تم العثور على الرقم المستهدف", ToastLength.Short).Show();
                 });
             }
-            else if (intent.Action == "TEST_SHUFFLE")
-            {
-                // ✅ خلط يدوي من الزر العائم
-                int n = activity.currentNumbers.Count;
-                for (int i = n - 1; i > 0; i--)
-                {
-                    byte[] bytes = new byte[4];
-                    activity.rng.GetBytes(bytes);
-                    int j = Math.Abs(BitConverter.ToInt32(bytes, 0) % (i + 1));
-                    int temp = activity.currentNumbers[i];
-                    activity.currentNumbers[i] = activity.currentNumbers[j];
-                    activity.currentNumbers[j] = temp;
-                }
-                activity.RunOnUiThread(() => {
-                    activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
-                    Toast.MakeText(activity, "🧪 تم الخلط من الزر العائم!", ToastLength.Short).Show();
-                });
-            }
         }
     }
 
@@ -262,7 +241,6 @@ public class MainActivity : Activity
         {
             while (isShuffling && !token.IsCancellationRequested)
             {
-                // ✅ خلط الأرقام
                 int n = currentNumbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
@@ -274,12 +252,10 @@ public class MainActivity : Activity
                     currentNumbers[j] = temp;
                 }
                 
-                // ✅ تحديث الواجهة
                 RunOnUiThread(() => {
                     textView.Text = FormatNumbers(currentNumbers);
                 });
                 
-                // ✅ التحقق من الرقم المستهدف
                 if (currentNumbers[0] == 1 || currentNumbers[0] == 2 || currentNumbers[0] == 3)
                 {
                     RunOnUiThread(() => {
@@ -288,7 +264,6 @@ public class MainActivity : Activity
                         SendBroadcast(colorIntent);
                     });
                     
-                    // ✅ إيقاف الخلط
                     isShuffling = false;
                     
                     Intent foundIntent = new Intent("FOUND_TARGET");
