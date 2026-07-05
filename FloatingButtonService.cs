@@ -19,7 +19,6 @@ public class FloatingButtonService : Service
     private BroadcastReceiver receiver;
     private bool isShuffling = false;
 
-    // ✅ إضافة متغيرات للسحب
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
     private bool isDragging = false;
@@ -70,7 +69,6 @@ public class FloatingButtonService : Service
                 }
             }
 
-            // ✅ إنشاء الزر العائم
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
             floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 18);
@@ -79,7 +77,6 @@ public class FloatingButtonService : Service
             
             // ✅ إضافة حدث الضغط مع التمييز بين الضغط والسحب
             floatingButton.Click += (s, e) => {
-                // ✅ فقط إذا لم يكن سحباً
                 if (!isDragging)
                 {
                     isShuffling = !isShuffling;
@@ -102,13 +99,12 @@ public class FloatingButtonService : Service
                         SendBroadcast(stopIntent);
                     }
                 }
-                isDragging = false; // ✅ إعادة تعيين حالة السحب
+                isDragging = false;
             };
             
             // ✅ إضافة حدث السحب (OnTouch)
             floatingButton.SetOnTouchListener(new FloatingButtonTouchListener(this));
             
-            // ✅ وضع الزر في Layout
             LinearLayout container = new LinearLayout(this);
             container.AddView(floatingButton);
             floatingView = container;
@@ -162,10 +158,12 @@ public class FloatingButtonService : Service
             this.service = service;
         }
 
-        public bool OnTouch(View v, MotionEvent e)
+        public bool OnTouch(View? v, MotionEvent? e)
         {
-            // ✅ الحصول على المعلمات الحالية للزر
-            if (layoutParams == null && service.windowManager != null && service.floatingView != null)
+            if (e == null || service.windowManager == null || service.floatingView == null)
+                return false;
+
+            if (layoutParams == null)
             {
                 try
                 {
@@ -179,7 +177,6 @@ public class FloatingButtonService : Service
             switch (e.Action)
             {
                 case MotionEventActions.Down:
-                    // ✅ تسجيل موقع البداية
                     service.initialX = layoutParams.X;
                     service.initialY = layoutParams.Y;
                     service.initialTouchX = e.RawX;
@@ -188,17 +185,14 @@ public class FloatingButtonService : Service
                     return true;
 
                 case MotionEventActions.Move:
-                    // ✅ حساب المسافة المقطوعة
                     float deltaX = e.RawX - service.initialTouchX;
                     float deltaY = e.RawY - service.initialTouchY;
                     
-                    // ✅ إذا تحرك أكثر من 10 بكسل، نعتبره سحباً
                     if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
                     {
                         service.isDragging = true;
                     }
                     
-                    // ✅ تحديث موقع الزر
                     if (service.isDragging)
                     {
                         layoutParams.X = service.initialX + (int)deltaX;
@@ -208,7 +202,6 @@ public class FloatingButtonService : Service
                     return true;
 
                 case MotionEventActions.Up:
-                    // ✅ انتهاء اللمس
                     return true;
             }
             return false;
