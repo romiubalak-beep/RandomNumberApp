@@ -26,123 +26,146 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         
-        rng = RandomNumberGenerator.Create();
-        cancellationToken = new System.Threading.CancellationTokenSource();
-        
-        originalNumbers = new List<int>();
-        for (int i = 1; i <= 150; i++)
+        try
         {
-            originalNumbers.Add(i);
-        }
-        currentNumbers = new List<int>(originalNumbers);
-        
-        CheckOverlayPermission();
-        
-        if (!accessibilityChecked)
-        {
-            accessibilityChecked = true;
-            CheckAccessibilityPermission();
-        }
-        
-        // ✅ إنشاء الواجهة الرئيسية
-        FrameLayout rootLayout = new FrameLayout(this);
-        
-        LinearLayout mainLayout = new LinearLayout(this);
-        mainLayout.Orientation = Orientation.Vertical;
-        mainLayout.SetPadding(50, 50, 50, 50);
-        mainLayout.SetGravity(GravityFlags.Center);
-        
-        textView = new TextView(this);
-        textView.Text = FormatNumbers(currentNumbers);
-        textView.TextSize = 14;
-        textView.SetTextColor(Color.Black);
-        
-        Button resetButton = new Button(this);
-        resetButton.Text = "🔄 إظهار الأرقام الأصلية";
-        resetButton.SetTextColor(Color.White);
-        resetButton.SetBackgroundColor(Color.Gray);
-        resetButton.Click += (s, e) => {
+            rng = RandomNumberGenerator.Create();
+            cancellationToken = new System.Threading.CancellationTokenSource();
+            
+            originalNumbers = new List<int>();
+            for (int i = 1; i <= 150; i++)
+            {
+                originalNumbers.Add(i);
+            }
             currentNumbers = new List<int>(originalNumbers);
+            
+            CheckOverlayPermission();
+            
+            if (!accessibilityChecked)
+            {
+                accessibilityChecked = true;
+                CheckAccessibilityPermission();
+            }
+            
+            // ✅ إنشاء الواجهة الرئيسية
+            FrameLayout rootLayout = new FrameLayout(this);
+            
+            LinearLayout mainLayout = new LinearLayout(this);
+            mainLayout.Orientation = Orientation.Vertical;
+            mainLayout.SetPadding(50, 50, 50, 50);
+            mainLayout.SetGravity(GravityFlags.Center);
+            
+            textView = new TextView(this);
             textView.Text = FormatNumbers(currentNumbers);
-            Toast.MakeText(this, "تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
-        };
-        
-        mainLayout.AddView(textView);
-        mainLayout.AddView(resetButton);
-        
-        LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MatchParent,
-            LinearLayout.LayoutParams.WrapContent);
-        params1.SetMargins(0, 0, 0, 20);
-        textView.LayoutParameters = params1;
-        
-        rootLayout.AddView(mainLayout);
-        
-        // ✅ إنشاء زر عائم بسيط
-        CreateFloatingButton(rootLayout);
-        
-        SetContentView(rootLayout);
-        
-        shuffleReceiver = new ShuffleBroadcastReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.AddAction("START_SHUFFLING");
-        filter.AddAction("STOP_SHUFFLING");
-        filter.AddAction("PERFORM_TAP");
-        filter.AddAction("FOUND_TARGET");
-        
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
-        {
-            RegisterReceiver(shuffleReceiver, filter, ReceiverFlags.NotExported);
+            textView.TextSize = 14;
+            textView.SetTextColor(Color.Black);
+            
+            Button resetButton = new Button(this);
+            resetButton.Text = "🔄 إظهار الأرقام الأصلية";
+            resetButton.SetTextColor(Color.White);
+            resetButton.SetBackgroundColor(Color.Gray);
+            resetButton.Click += (s, e) => {
+                currentNumbers = new List<int>(originalNumbers);
+                textView.Text = FormatNumbers(currentNumbers);
+                Toast.MakeText(this, "تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
+            };
+            
+            mainLayout.AddView(textView);
+            mainLayout.AddView(resetButton);
+            
+            LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MatchParent,
+                LinearLayout.LayoutParams.WrapContent);
+            params1.SetMargins(0, 0, 0, 20);
+            textView.LayoutParameters = params1;
+            
+            rootLayout.AddView(mainLayout);
+            
+            // ✅ إنشاء زر عائم بسيط
+            CreateFloatingButton(rootLayout);
+            
+            SetContentView(rootLayout);
+            
+            shuffleReceiver = new ShuffleBroadcastReceiver();
+            IntentFilter filter = new IntentFilter();
+            filter.AddAction("START_SHUFFLING");
+            filter.AddAction("STOP_SHUFFLING");
+            filter.AddAction("PERFORM_TAP");
+            filter.AddAction("FOUND_TARGET");
+            
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
+            {
+                RegisterReceiver(shuffleReceiver, filter, ReceiverFlags.NotExported);
+            }
+            else
+            {
+                RegisterReceiver(shuffleReceiver, filter);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            RegisterReceiver(shuffleReceiver, filter);
+            Toast.MakeText(this, "خطأ في التهيئة: " + ex.Message, ToastLength.Long).Show();
+            Android.Util.Log.Error("MainActivity", "OnCreate Error: " + ex.Message);
         }
     }
 
     private void CreateFloatingButton(FrameLayout rootLayout)
     {
-        fabButton = new Button(this);
-        fabButton.Text = "▶";
-        fabButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 24);
-        fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
-        fabButton.SetTextColor(Color.White);
-        fabButton.Click += FabButton_Click;
-        
-        // ✅ جعل الزر دائرياً
-        fabButton.SetPadding(20, 20, 20, 20);
-        
-        var layoutParams = new FrameLayout.LayoutParams(
-            (int)(80 * Resources.DisplayMetrics.Density),
-            (int)(80 * Resources.DisplayMetrics.Density));
-        layoutParams.Gravity = GravityFlags.Bottom | GravityFlags.Right;
-        layoutParams.BottomMargin = (int)(30 * Resources.DisplayMetrics.Density);
-        layoutParams.RightMargin = (int)(30 * Resources.DisplayMetrics.Density);
-        
-        rootLayout.AddView(fabButton, layoutParams);
+        try
+        {
+            fabButton = new Button(this);
+            fabButton.Text = "▶";
+            fabButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 24);
+            fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+            fabButton.SetTextColor(Color.White);
+            fabButton.Click += FabButton_Click;
+            
+            // ✅ جعل الزر دائرياً
+            fabButton.SetPadding(20, 20, 20, 20);
+            
+            var layoutParams = new FrameLayout.LayoutParams(
+                (int)(80 * Resources.DisplayMetrics.Density),
+                (int)(80 * Resources.DisplayMetrics.Density));
+            layoutParams.Gravity = GravityFlags.Bottom | GravityFlags.Right;
+            layoutParams.BottomMargin = (int)(30 * Resources.DisplayMetrics.Density);
+            layoutParams.RightMargin = (int)(30 * Resources.DisplayMetrics.Density);
+            
+            rootLayout.AddView(fabButton, layoutParams);
+        }
+        catch (Exception ex)
+        {
+            Android.Util.Log.Error("MainActivity", "CreateFloatingButton Error: " + ex.Message);
+        }
     }
 
     private void FabButton_Click(object sender, EventArgs e)
     {
-        if (!isShuffling)
+        try
         {
-            isShuffling = true;
-            fabButton.Text = "⏹";
-            fabButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
-            Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-            
-            cancellationToken = new System.Threading.CancellationTokenSource();
-            StartFastShuffling(cancellationToken.Token);
+            if (!isShuffling)
+            {
+                isShuffling = true;
+                fabButton.Text = "⏹";
+                fabButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
+                Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+                
+                cancellationToken = new System.Threading.CancellationTokenSource();
+                StartFastShuffling(cancellationToken.Token);
+            }
+            else
+            {
+                isShuffling = false;
+                fabButton.Text = "▶";
+                fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+                cancellationToken.Cancel();
+                currentNumbers = new List<int>(originalNumbers);
+                textView.Text = FormatNumbers(currentNumbers);
+                Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            isShuffling = false;
-            fabButton.Text = "▶";
-            fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
-            cancellationToken.Cancel();
-            currentNumbers = new List<int>(originalNumbers);
-            textView.Text = FormatNumbers(currentNumbers);
-            Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+            Toast.MakeText(this, "خطأ: " + ex.Message, ToastLength.Short).Show();
+            Android.Util.Log.Error("MainActivity", "FabButton_Click Error: " + ex.Message);
         }
     }
 
@@ -223,15 +246,25 @@ public class MainActivity : Activity
 
     private void OnTargetFound()
     {
-        isShuffling = false;
-        cancellationToken.Cancel();
-        currentNumbers = new List<int>(originalNumbers);
-        RunOnUiThread(() => {
-            textView.Text = FormatNumbers(currentNumbers);
-            Toast.MakeText(this, "✅ تم العثور على الرقم المستهدف - إعادة الأرقام الأصلية", ToastLength.Short).Show();
-            fabButton.Text = "▶";
-            fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
-        });
+        try
+        {
+            isShuffling = false;
+            cancellationToken.Cancel();
+            currentNumbers = new List<int>(originalNumbers);
+            RunOnUiThread(() => {
+                textView.Text = FormatNumbers(currentNumbers);
+                Toast.MakeText(this, "✅ تم العثور على الرقم المستهدف - إعادة الأرقام الأصلية", ToastLength.Short).Show();
+                if (fabButton != null)
+                {
+                    fabButton.Text = "▶";
+                    fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Android.Util.Log.Error("MainActivity", "OnTargetFound Error: " + ex.Message);
+        }
     }
 
     private void CheckOverlayPermission()
@@ -281,8 +314,11 @@ public class MainActivity : Activity
                     RunOnUiThread(() => {
                         textView.Text = FormatNumbers(currentNumbers);
                         Toast.MakeText(this, "✅ تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
-                        fabButton.Text = "▶";
-                        fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+                        if (fabButton != null)
+                        {
+                            fabButton.Text = "▶";
+                            fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+                        }
                     });
                     
                     PerformTapOnCenter();
