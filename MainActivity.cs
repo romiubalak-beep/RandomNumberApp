@@ -19,7 +19,7 @@ public class MainActivity : Activity
     private bool accessibilityChecked = false;
     private List<int> originalNumbers;
     private List<int> currentNumbers;
-    private bool isShuffling = false; // ✅ حالة الخلط
+    private bool isShuffling = false;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -49,7 +49,7 @@ public class MainActivity : Activity
         layout.SetGravity(GravityFlags.Center);
         
         textView = new TextView(this);
-        textView.Text = FormatNumbers(originalNumbers);
+        textView.Text = FormatNumbers(currentNumbers);
         textView.TextSize = 14;
         textView.SetTextColor(Color.Black);
         
@@ -256,7 +256,7 @@ public class MainActivity : Activity
                     
                     PerformTapOnCenter();
                     
-                    // ✅ انتظار ثانية ثم إعادة تعيين حالة الخلط
+                    // ✅ انتظار ثانية
                     await System.Threading.Tasks.Task.Delay(1000);
                     
                     // ✅ إعادة تعيين حالة الخلط إلى false
