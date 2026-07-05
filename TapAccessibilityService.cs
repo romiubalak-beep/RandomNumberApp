@@ -10,6 +10,7 @@ using Android.Widget;
 using System;
 using System.Collections.Generic;
 using Android.Content.PM;
+using Android.Views.Accessibility; // ✅ إضافة هذه المساحة الاسمية
 
 namespace RandomNumberApp
 {
@@ -18,7 +19,7 @@ namespace RandomNumberApp
     {
         private static readonly string TAG = "FloatBarService";
         private WindowManagerLayoutParams wmParams;
-        private WindowManager windowManager;
+        private IWindowManager windowManager; // ✅ استخدام IWindowManager
         private LinearLayout floatLayout;
         private ImageButton floatButton;
         private Prefs prefs;
@@ -49,7 +50,8 @@ namespace RandomNumberApp
             }
         }
 
-        public override void OnAccessibilityEvent(AccessibilityEvent e)
+        // ✅ استخدام AccessibilityEvent مع المسار الصحيح
+        public override void OnAccessibilityEvent(AccessibilityEvent? e)
         {
             // معالجة الأحداث
         }
@@ -72,100 +74,124 @@ namespace RandomNumberApp
 
         private void CreateFloatView()
         {
-            // إعدادات النافذة العائمة
-            wmParams = new WindowManagerLayoutParams(
-                WindowManagerLayoutParams.WrapContent,
-                WindowManagerLayoutParams.WrapContent,
-                Build.VERSION.SdkInt >= BuildVersionCodes.O
-                    ? WindowManagerTypes.ApplicationOverlay
-                    : WindowManagerTypes.Phone,
-                WindowManagerFlags.NotFocusable,
-                Android.Graphics.Format.Translucent);
-
-            // تحديد موقع الزر (يمين أو يسار)
-            wmParams.Gravity = prefs.IsRightMode ? GravityFlags.Right | GravityFlags.Top : GravityFlags.Left | GravityFlags.Top;
-            wmParams.X = 0;
-            wmParams.Y = 0;
-
-            windowManager = GetSystemService(Context.WindowService).JavaCast<WindowManager>();
-
-            // إنشاء Layout للزر
-            floatLayout = new LinearLayout(this);
-            floatLayout.Orientation = Orientation.Vertical;
-
-            // إنشاء الزر
-            floatButton = new ImageButton(this);
-            floatButton.SetImageResource(Android.Resource.Drawable.IcMenuCamera); // أيقونة مؤقتة
-            floatButton.SetBackgroundColor(Color.Argb(150, 0, 0, 255));
-            floatButton.Click += (s, e) =>
+            try
             {
-                prefs.DoTouch(this);
-            };
-
-            // إضافة الزر إلى Layout
-            floatLayout.AddView(floatButton);
-
-            // إضافة النافذة العائمة
-            windowManager.AddView(floatLayout, wmParams);
-
-            // إعدادات اللمس
-            var listener = new MyOnGestureListener(this, prefs);
-            gestureDetector = new GestureDetector(listener);
-
-            floatButton.Touch += (s, e) =>
-            {
-                if (prefs.IsFeedback)
+                // إعدادات النافذة العائمة
+                int type;
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
                 {
-                    if (e.Event.Action == MotionEventActions.Down)
-                    {
-                        floatButton.SetBackgroundColor(Color.ParseColor("#ffd060"));
-                    }
-                    else if (e.Event.Action == MotionEventActions.Up)
-                    {
-                        floatButton.SetBackgroundColor(prefs.GetColor());
-                        floatButton.Background.SetAlpha(prefs.Alpha);
-                    }
+                    type = (int)WindowManagerTypes.ApplicationOverlay;
                 }
-                gestureDetector.OnTouchEvent(e.Event);
-                e.Handled = true;
-            };
+                else
+                {
+                    type = (int)WindowManagerTypes.Phone;
+                }
+
+                wmParams = new WindowManagerLayoutParams(
+                    WindowManagerLayoutParams.WrapContent,
+                    WindowManagerLayoutParams.WrapContent,
+                    type,
+                    (int)WindowManagerFlags.NotFocusable,
+                    Android.Graphics.Format.Translucent);
+
+                // تحديد موقع الزر (يمين أو يسار)
+                wmParams.Gravity = prefs.IsRightMode ? (int)(GravityFlags.Right | GravityFlags.Top) : (int)(GravityFlags.Left | GravityFlags.Top);
+                wmParams.X = 0;
+                wmParams.Y = 0;
+
+                // الحصول على WindowManager
+                windowManager = GetSystemService(Context.WindowService).JavaCast<IWindowManager>();
+
+                // إنشاء Layout للزر
+                floatLayout = new LinearLayout(this);
+                floatLayout.Orientation = Orientation.Vertical;
+
+                // إنشاء الزر
+                floatButton = new ImageButton(this);
+                floatButton.SetImageResource(Android.Resource.Drawable.IcMenuCamera);
+                floatButton.SetBackgroundColor(Color.Argb(150, 0, 0, 255));
+                floatButton.Click += (s, e) =>
+                {
+                    prefs.DoTouch(this);
+                };
+
+                // إضافة الزر إلى Layout
+                floatLayout.AddView(floatButton);
+
+                // إضافة النافذة العائمة
+                windowManager.AddView(floatLayout, wmParams);
+
+                // إعدادات اللمس
+                var listener = new MyOnGestureListener(this, prefs);
+                gestureDetector = new GestureDetector(listener);
+
+                floatButton.Touch += (s, e) =>
+                {
+                    if (prefs.IsFeedback)
+                    {
+                        if (e.Event.Action == MotionEventActions.Down)
+                        {
+                            floatButton.SetBackgroundColor(Color.ParseColor("#ffd060"));
+                        }
+                        else if (e.Event.Action == MotionEventActions.Up)
+                        {
+                            floatButton.SetBackgroundColor(prefs.GetColor());
+                            floatButton.Background.SetAlpha(prefs.Alpha);
+                        }
+                    }
+                    gestureDetector.OnTouchEvent(e.Event);
+                    e.Handled = true;
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Error(TAG, "CreateFloatView Error: " + ex.Message);
+            }
         }
 
         private void UpdateFloatService()
         {
-            // تحديث الموقع
-            wmParams.Gravity = prefs.IsRightMode ? GravityFlags.Right | GravityFlags.Top : GravityFlags.Left | GravityFlags.Top;
-            wmParams.Y = prefs.Distance;
-            windowManager?.UpdateViewLayout(floatLayout, wmParams);
+            try
+            {
+                // تحديث الموقع
+                wmParams.Gravity = prefs.IsRightMode ? (int)(GravityFlags.Right | GravityFlags.Top) : (int)(GravityFlags.Left | GravityFlags.Top);
+                wmParams.Y = prefs.Distance;
+                windowManager?.UpdateViewLayout(floatLayout, wmParams);
 
-            // إظهار أو إخفاء الزر
-            floatButton.Visibility = prefs.IsEnabled ? ViewStates.Visible : ViewStates.Gone;
+                // إظهار أو إخفاء الزر
+                floatButton.Visibility = prefs.IsEnabled ? ViewStates.Visible : ViewStates.Gone;
 
-            // تحديث الحجم
-            floatButton.SetMinimumWidth(prefs.Width);
-            floatButton.SetMinimumHeight(prefs.Height);
+                // تحديث الحجم
+                floatButton.SetMinimumWidth(prefs.Width);
+                floatButton.SetMinimumHeight(prefs.Height);
 
-            // تحديث اللون والشفافية
-            floatButton.SetBackgroundColor(prefs.GetColor());
-            floatButton.Background.SetAlpha(prefs.Alpha);
-        }
-
-        // تنفيذ إجراءات عالمية (مثل النقر على زر الرجوع)
-        public void PerformGlobalAction(int action)
-        {
-            PerformGlobalAction((GlobalAction)action);
+                // تحديث اللون والشفافية
+                floatButton.SetBackgroundColor(prefs.GetColor());
+                floatButton.Background.SetAlpha(prefs.Alpha);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(TAG, "UpdateFloatService Error: " + ex.Message);
+            }
         }
 
         // تنفيذ نقرة على إحداثيات محددة
         public void PerformTap(int x, int y)
         {
-            var path = new Path();
-            path.MoveTo(x, y);
+            try
+            {
+                var path = new Path();
+                path.MoveTo(x, y);
 
-            var builder = new GestureDescription.Builder();
-            builder.AddStroke(new GestureDescription.StrokeDescription(path, 0, 1));
+                var builder = new GestureDescription.Builder();
+                builder.AddStroke(new GestureDescription.StrokeDescription(path, 0, 1));
 
-            DispatchGesture(builder.Build(), null, null);
+                DispatchGesture(builder.Build(), null, null);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(TAG, "PerformTap Error: " + ex.Message);
+            }
         }
 
         // **********************************************
@@ -298,9 +324,10 @@ namespace RandomNumberApp
 
         public void DoTouch(Context context)
         {
-            // تنفيذ إجراء عند النقر على الزر العائم
-            Toast.MakeText(context, "تم النقر على الزر العائم!", ToastLength.Short).Show();
-            // هنا يمكنك تنفيذ الخلط أو أي إجراء آخر
+            // ✅ بدء الخلط عند النقر على الزر العائم
+            Toast.MakeText(context, "✅ بدء الخلط!", ToastLength.Short).Show();
+            Intent startIntent = new Intent("START_SHUFFLING");
+            context.SendBroadcast(startIntent);
         }
 
         public void DoDoubleClick(Context context)
