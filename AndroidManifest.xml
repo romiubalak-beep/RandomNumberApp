@@ -10,7 +10,6 @@
         android:allowBackup="true"
         android:label="RandomApp"
         android:theme="@android:style/Theme.Light">
-        
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -21,7 +20,12 @@
         </activity>
         
         <service
-            android:name=".FloatBarService"
+            android:name=".FloatingButtonService"
+            android:stopWithTask="true"
+            android:exported="false" />
+            
+        <service
+            android:name=".TapAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>
@@ -31,6 +35,5 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
-        
     </application>
 </manifest>
