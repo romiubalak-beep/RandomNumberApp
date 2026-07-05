@@ -179,6 +179,7 @@ public class MainActivity : Activity
                     activity.isShuffling = true;
                     activity.cancellationToken = new System.Threading.CancellationTokenSource();
                     activity.StartFastShuffling(activity.cancellationToken.Token);
+                    Toast.MakeText(activity, "✅ بدء الخلط", ToastLength.Short).Show();
                 }
             }
             else if (intent.Action == "STOP_SHUFFLING")
@@ -191,6 +192,7 @@ public class MainActivity : Activity
                     activity.RunOnUiThread(() => {
                         activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
                     });
+                    Toast.MakeText(activity, "⏹ إيقاف الخلط", ToastLength.Short).Show();
                 }
             }
             else if (intent.Action == "PERFORM_TAP")
@@ -226,9 +228,9 @@ public class MainActivity : Activity
     {
         if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
         {
-            if (!Settings.CanDrawOverlays(this))
+            if (!Android.Provider.Settings.CanDrawOverlays(this))
             {
-                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
+                Intent intent = new Intent(Android.Provider.Settings.ActionManageOverlayPermission,
                     Android.Net.Uri.Parse("package:" + PackageName));
                 StartActivity(intent);
                 Toast.MakeText(this, "الرجاء تفعيل صلاحية العرض فوق التطبيقات", ToastLength.Long).Show();
