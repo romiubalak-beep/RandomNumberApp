@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.kale.floatbar">
+    package="com.example.randomapp">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.ACCESSIBILITY_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name"
-        android:theme="@style/AppTheme">
+        android:label="FloatBar"
+        android:theme="@android:style/Theme.Light">
         
         <activity
-            android:name="com.kale.floatbar.MainActivity"
-            android:label="@string/app_name">
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         
-        <!-- ✅ تسجيل خدمة إمكانية الوصول -->
         <service
-            android:name="com.kale.floatbar.service.FloatService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            android:name=".FloatBarService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
             <meta-data
                 android:name="android.accessibilityservice"
-                android:resource="@xml/accessibilityservice" />
+                android:resource="@xml/accessibility_service_config" />
         </service>
         
     </application>
-
 </manifest>
