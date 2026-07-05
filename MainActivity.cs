@@ -17,8 +17,8 @@ public class MainActivity : Activity
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
     private bool accessibilityChecked = false;
-    private List<int> originalNumbers; // ✅ المصفوفة الأصلية
-    private List<int> currentNumbers;  // ✅ المصفوفة الحالية
+    private List<int> originalNumbers;
+    private List<int> currentNumbers;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -27,7 +27,6 @@ public class MainActivity : Activity
         rng = RandomNumberGenerator.Create();
         cancellationToken = new System.Threading.CancellationTokenSource();
         
-        // ✅ إنشاء المصفوفة الأصلية (1 إلى 150)
         originalNumbers = new List<int>();
         for (int i = 1; i <= 150; i++)
         {
@@ -48,14 +47,11 @@ public class MainActivity : Activity
         layout.SetPadding(50, 50, 50, 50);
         layout.SetGravity(GravityFlags.Center);
         
-        // ✅ عرض الأرقام الأصلية
         textView = new TextView(this);
         textView.Text = FormatNumbers(originalNumbers);
-        textView.TextSize = 16;
+        textView.TextSize = 14;
         textView.SetTextColor(Color.Black);
-        textView.SetTextSize(Android.Util.ComplexUnitType.Sp, 14);
         
-        // ✅ زر لعرض الأرقام الأصلية (اختياري)
         Button resetButton = new Button(this);
         resetButton.Text = "🔄 إظهار الأرقام الأصلية";
         resetButton.SetTextColor(Color.White);
@@ -69,7 +65,6 @@ public class MainActivity : Activity
         layout.AddView(textView);
         layout.AddView(resetButton);
         
-        // ✅ إضافة مسافة بين الزرين
         LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MatchParent,
             LinearLayout.LayoutParams.WrapContent);
@@ -172,9 +167,8 @@ public class MainActivity : Activity
             else if (intent.Action == "STOP_SHUFFLING")
             {
                 activity.cancellationToken.Cancel();
-                // ✅ عند التوقف، إعادة الأرقام الأصلية
                 activity.currentNumbers = new List<int>(activity.originalNumbers);
-                RunOnUiThread(() => {
+                activity.RunOnUiThread(() => {
                     activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
                 });
             }
@@ -184,9 +178,8 @@ public class MainActivity : Activity
             }
             else if (intent.Action == "FOUND_TARGET")
             {
-                // ✅ عند العثور على الرقم المستهدف، إعادة الأرقام الأصلية
                 activity.currentNumbers = new List<int>(activity.originalNumbers);
-                RunOnUiThread(() => {
+                activity.RunOnUiThread(() => {
                     activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
                 });
             }
@@ -213,7 +206,6 @@ public class MainActivity : Activity
         {
             while (!token.IsCancellationRequested)
             {
-                // ✅ خلط الأرقام باستخدام Fisher-Yates
                 int n = currentNumbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
@@ -225,12 +217,10 @@ public class MainActivity : Activity
                     currentNumbers[j] = temp;
                 }
                 
-                // ✅ تحديث واجهة المستخدم
                 RunOnUiThread(() => {
                     textView.Text = FormatNumbers(currentNumbers);
                 });
                 
-                // ✅ التحقق من الرقم المستهدف
                 if (currentNumbers[0] == 1 || currentNumbers[0] == 2 || currentNumbers[0] == 3)
                 {
                     RunOnUiThread(() => {
@@ -239,12 +229,10 @@ public class MainActivity : Activity
                         SendBroadcast(colorIntent);
                     });
                     
-                    // ✅ إيقاف الخلط وإعادة الأرقام الأصلية
                     Intent foundIntent = new Intent("FOUND_TARGET");
                     foundIntent.PutExtra("number", currentNumbers[0]);
                     SendBroadcast(foundIntent);
                     
-                    // ✅ إعادة الأرقام الأصلية فوراً
                     currentNumbers = new List<int>(originalNumbers);
                     RunOnUiThread(() => {
                         textView.Text = FormatNumbers(currentNumbers);
@@ -253,7 +241,6 @@ public class MainActivity : Activity
                     
                     PerformTapOnCenter();
                     
-                    // ✅ انتظار ثانية قبل السماح بالخلط مرة أخرى
                     await System.Threading.Tasks.Task.Delay(1000);
                 }
                 
@@ -262,7 +249,6 @@ public class MainActivity : Activity
         }
         catch (System.Threading.Tasks.TaskCanceledException)
         {
-            // ✅ تم الإلغاء - إعادة الأرقام الأصلية
             currentNumbers = new List<int>(originalNumbers);
             RunOnUiThread(() => {
                 textView.Text = FormatNumbers(currentNumbers);
