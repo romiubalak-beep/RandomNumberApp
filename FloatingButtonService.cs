@@ -96,8 +96,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             
             windowManager.AddView(floatingView, layoutParams);
             isCreated = true;
-            
-            // ✅ رسالة تأكيد للمستخدم
             Toast.MakeText(this, "✅ الزر العائم يعمل فوق التطبيقات", ToastLength.Short).Show();
         }
         catch (Exception ex)
@@ -116,8 +114,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 floatingButton.Text = "⏹";
                 floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
                 SendBroadcast(new Intent("START_SHUFFLING"));
-                
-                // ✅ رسالة تأكيد
                 Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
                 
                 // ✅ تشغيل خدمة إمكانية الوصول
@@ -129,8 +125,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 floatingButton.Text = "▶";
                 floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
                 SendBroadcast(new Intent("STOP_SHUFFLING"));
-                
-                // ✅ رسالة تأكيد
                 Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
                 
                 // ✅ إيقاف خدمة إمكانية الوصول
