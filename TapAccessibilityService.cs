@@ -25,7 +25,6 @@ public class TapAccessibilityService : AccessibilityService
         Android.Util.Log.Info("TapService", "✅ Service connected");
     }
 
-    // ✅ تغيير إلى public override (لأن OnDestroy في Service هي public)
     public override void OnDestroy()
     {
         base.OnDestroy();
