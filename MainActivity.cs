@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
 using System.Security.Cryptography;
-using Google.Android.Material.FloatingActionButton; // ✅ مكتبة Material Design
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -21,7 +20,7 @@ public class MainActivity : Activity
     private List<int> originalNumbers;
     private List<int> currentNumbers;
     private bool isShuffling = false;
-    private FloatingActionButton fab; // ✅ زر عائم من Material Design
+    private Button fabButton; // ✅ زر عائم بسيط (بدون مكتبات)
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -46,6 +45,9 @@ public class MainActivity : Activity
         }
         
         // ✅ إنشاء الواجهة الرئيسية
+        FrameLayout rootLayout = new FrameLayout(this);
+        
+        // ✅ الواجهة الداخلية (LinearLayout)
         LinearLayout mainLayout = new LinearLayout(this);
         mainLayout.Orientation = Orientation.Vertical;
         mainLayout.SetPadding(50, 50, 50, 50);
@@ -76,10 +78,12 @@ public class MainActivity : Activity
         params1.SetMargins(0, 0, 0, 20);
         textView.LayoutParameters = params1;
         
-        SetContentView(mainLayout);
+        rootLayout.AddView(mainLayout);
         
-        // ✅ إنشاء الزر العائم (FAB) من Material Design
-        CreateFloatingActionButton();
+        // ✅ إنشاء زر عائم بسيط (Button)
+        CreateFloatingButton(rootLayout);
+        
+        SetContentView(rootLayout);
         
         shuffleReceiver = new ShuffleBroadcastReceiver();
         IntentFilter filter = new IntentFilter();
@@ -98,34 +102,34 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة إنشاء الزر العائم
-    private void CreateFloatingActionButton()
+    // ✅ دالة إنشاء زر عائم بسيط
+    private void CreateFloatingButton(FrameLayout rootLayout)
     {
-        // ✅ إنشاء الزر العائم
-        fab = new FloatingActionButton(this);
-        fab.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_play_arrow));
-        fab.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
-        fab.Click += Fab_Click;
+        fabButton = new Button(this);
+        fabButton.Text = "▶";
+        fabButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 24);
+        fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+        fabButton.SetTextColor(Color.White);
+        fabButton.Click += FabButton_Click;
         
         // ✅ إضافة الزر إلى الواجهة
         var layoutParams = new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WrapContent,
-            FrameLayout.LayoutParams.WrapContent);
+            (int)(100 * Resources.DisplayMetrics.Density), // 100dp
+            (int)(100 * Resources.DisplayMetrics.Density)); // 100dp
         layoutParams.Gravity = GravityFlags.Bottom | GravityFlags.Right;
-        layoutParams.BottomMargin = 30;
-        layoutParams.RightMargin = 30;
+        layoutParams.BottomMargin = (int)(30 * Resources.DisplayMetrics.Density);
+        layoutParams.RightMargin = (int)(30 * Resources.DisplayMetrics.Density);
         
-        var rootLayout = (FrameLayout)Window.DecorView.RootView;
-        rootLayout.AddView(fab, layoutParams);
+        rootLayout.AddView(fabButton, layoutParams);
     }
 
-    private void Fab_Click(object sender, EventArgs e)
+    private void FabButton_Click(object sender, EventArgs e)
     {
         if (!isShuffling)
         {
             isShuffling = true;
-            fab.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_stop));
-            fab.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#4CAF50"));
+            fabButton.Text = "⏹";
+            fabButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
             Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
             
             cancellationToken = new System.Threading.CancellationTokenSource();
@@ -134,8 +138,8 @@ public class MainActivity : Activity
         else
         {
             isShuffling = false;
-            fab.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_play_arrow));
-            fab.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
+            fabButton.Text = "▶";
+            fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
             cancellationToken.Cancel();
             currentNumbers = new List<int>(originalNumbers);
             textView.Text = FormatNumbers(currentNumbers);
@@ -226,8 +230,8 @@ public class MainActivity : Activity
         RunOnUiThread(() => {
             textView.Text = FormatNumbers(currentNumbers);
             Toast.MakeText(this, "✅ تم العثور على الرقم المستهدف - إعادة الأرقام الأصلية", ToastLength.Short).Show();
-            fab.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_play_arrow));
-            fab.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
+            fabButton.Text = "▶";
+            fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
         });
     }
 
@@ -278,8 +282,8 @@ public class MainActivity : Activity
                     RunOnUiThread(() => {
                         textView.Text = FormatNumbers(currentNumbers);
                         Toast.MakeText(this, "✅ تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
-                        fab.SetImageDrawable(Android.Support.V4.Content.ContextCompat.GetDrawable(this, Resource.Drawable.ic_play_arrow));
-                        fab.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Color.ParseColor("#2196F3"));
+                        fabButton.Text = "▶";
+                        fabButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
                     });
                     
                     PerformTapOnCenter();
@@ -347,10 +351,6 @@ public class MainActivity : Activity
         try
         {
             UnregisterReceiver(shuffleReceiver);
-            if (fab != null && fab.Parent != null)
-            {
-                ((ViewGroup)fab.Parent).RemoveView(fab);
-            }
         }
         catch (Exception) { }
     }
