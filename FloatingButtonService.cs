@@ -16,7 +16,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     private Button floatingButton;
     private bool isCreated = false;
     
-    // متغيرات للسحب
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
     private bool isDragging = false;
@@ -37,7 +36,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     {
         try
         {
-            // طلب صلاحية العرض فوق التطبيقات
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M && !Settings.CanDrawOverlays(this))
             {
                 Intent intent = new Intent(Settings.ActionManageOverlayPermission,
@@ -47,7 +45,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return;
             }
 
-            // إنشاء الزر
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
             floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 20);
@@ -98,7 +95,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
 
     private void ToggleShuffling()
     {
-        // هذه الدالة سترسل Broadcast لتشغيل أو إيقاف الخلط
         if (floatingButton.Text == "▶")
         {
             floatingButton.Text = "⏹";
