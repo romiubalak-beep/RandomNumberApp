@@ -18,7 +18,7 @@ public class MainActivity : Activity
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
-    private bool accessibilityChecked = false; // ✅ لمنع التكرار
+    private bool accessibilityChecked = false;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -29,7 +29,6 @@ public class MainActivity : Activity
         
         CheckOverlayPermission();
         
-        // ✅ التحقق من صلاحية إمكانية الوصول مرة واحدة فقط
         if (!accessibilityChecked)
         {
             accessibilityChecked = true;
@@ -47,7 +46,7 @@ public class MainActivity : Activity
         textView.SetTextColor(Color.Black);
         
         startButton = new Button(this);
-        startButton.Text = "بدء الخلط (يدوي)";
+        startButton.Text = "▶ بدء الخلط";
         startButton.SetTextColor(Color.White);
         startButton.SetBackgroundColor(Color.Blue);
         startButton.Click += StartShuffling;
@@ -91,14 +90,11 @@ public class MainActivity : Activity
     {
         try
         {
-            // ✅ التحقق مما إذا كانت الخدمة مفعلة بالفعل
             if (IsAccessibilityServiceEnabled())
             {
-                // ✅ الخدمة مفعلة، لا حاجة لفتح الإعدادات
                 return;
             }
             
-            // ✅ فقط إذا لم تكن مفعلة، نطلب من المستخدم تفعيلها
             Intent intent = new Intent(Android.Provider.Settings.ActionAccessibilitySettings);
             StartActivity(intent);
             Toast.MakeText(this, "الرجاء تفعيل خدمة إمكانية الوصول للتطبيق", ToastLength.Long).Show();
@@ -114,7 +110,6 @@ public class MainActivity : Activity
         try
         {
             string serviceName = "com.example.randomapp/com.example.randomapp.TapAccessibilityService";
-            Android.Content.ISharedPreferences prefs = GetSharedPreferences("accessibility_prefs", FileCreationMode.Private);
             string enabledServices = Android.Provider.Settings.Secure.GetString(ContentResolver, Android.Provider.Settings.Secure.EnabledAccessibilityServices);
             
             if (!string.IsNullOrEmpty(enabledServices))
@@ -140,8 +135,12 @@ public class MainActivity : Activity
                 {
                     activity.isRunning = true;
                     activity.startButton.Text = "⏹ إيقاف الخلط";
+                    activity.startButton.SetBackgroundColor(Color.Red);
                     activity.cancellationToken = new System.Threading.CancellationTokenSource();
                     activity.StartFastShuffling(activity.cancellationToken.Token);
+                    
+                    // ✅ مزامنة حالة الزر العائم
+                    activity.SyncFloatingButtonState(true);
                 }
             }
             else if (intent.Action == "STOP_SHUFFLING")
@@ -150,8 +149,12 @@ public class MainActivity : Activity
                 {
                     activity.isRunning = false;
                     activity.startButton.Text = "▶ بدء الخلط";
+                    activity.startButton.SetBackgroundColor(Color.Blue);
                     activity.cancellationToken.Cancel();
                     activity.textView.Text = "⏹ تم إيقاف الخلط";
+                    
+                    // ✅ مزامنة حالة الزر العائم
+                    activity.SyncFloatingButtonState(false);
                 }
             }
             else if (intent.Action == "PERFORM_TAP")
@@ -165,11 +168,29 @@ public class MainActivity : Activity
                     activity.isRunning = false;
                     activity.cancellationToken.Cancel();
                     activity.startButton.Text = "▶ بدء الخلط";
+                    activity.startButton.SetBackgroundColor(Color.Blue);
                     
                     int targetNumber = intent.GetIntExtra("number", 0);
                     activity.textView.Text = "⏸ تم العثور على الرقم: " + targetNumber + " - الخلط متوقف";
+                    
+                    // ✅ مزامنة حالة الزر العائم
+                    activity.SyncFloatingButtonState(false);
                 }
             }
+        }
+    }
+
+    private void SyncFloatingButtonState(bool isRunning)
+    {
+        try
+        {
+            Intent syncIntent = new Intent("SYNC_BUTTON_STATE");
+            syncIntent.PutExtra("isRunning", isRunning);
+            SendBroadcast(syncIntent);
+        }
+        catch (Exception ex)
+        {
+            Android.Util.Log.Error("MainActivity", "Sync Error: " + ex.Message);
         }
     }
 
@@ -193,15 +214,23 @@ public class MainActivity : Activity
         {
             isRunning = true;
             startButton.Text = "⏹ إيقاف الخلط";
+            startButton.SetBackgroundColor(Color.Red);
             cancellationToken = new System.Threading.CancellationTokenSource();
             StartFastShuffling(cancellationToken.Token);
+            
+            // ✅ مزامنة حالة الزر العائم
+            SyncFloatingButtonState(true);
         }
         else
         {
             isRunning = false;
             startButton.Text = "▶ بدء الخلط";
+            startButton.SetBackgroundColor(Color.Blue);
             cancellationToken.Cancel();
             textView.Text = "⏹ تم إيقاف الخلط";
+            
+            // ✅ مزامنة حالة الزر العائم
+            SyncFloatingButtonState(false);
         }
     }
 
@@ -248,8 +277,12 @@ public class MainActivity : Activity
                     
                     RunOnUiThread(() => {
                         startButton.Text = "▶ بدء الخلط";
+                        startButton.SetBackgroundColor(Color.Blue);
                         textView.Text = "⏸ توقف: تم العثور على " + numbers[0] + " - الخلط متوقف";
                     });
+                    
+                    // ✅ مزامنة حالة الزر العائم
+                    SyncFloatingButtonState(false);
                     
                     PerformTapOnCenter();
                     
