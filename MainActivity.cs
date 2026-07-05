@@ -27,17 +27,8 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         
-        // ✅ استخدام ملف XML مع معالجة الأخطاء
-        try
-        {
-            SetContentView(Resource.Layout.activity_main);
-        }
-        catch (Exception ex)
-        {
-            // ✅ إذا فشل تحميل XML، أنشئ الواجهة برمجياً
-            Android.Util.Log.Error("MainActivity", "XML Error: " + ex.Message);
-            CreateLayoutProgrammatically();
-        }
+        // ✅ إنشاء الواجهة برمجياً (بدون XML)
+        CreateLayoutProgrammatically();
         
         try
         {
@@ -50,25 +41,6 @@ public class MainActivity : Activity
                 originalNumbers.Add(i);
             }
             currentNumbers = new List<int>(originalNumbers);
-            
-            // ✅ ربط العناصر من XML (إذا كانت موجودة)
-            try
-            {
-                numbersTextView = FindViewById<TextView>(Resource.Id.numbersTextView);
-                titleTextView = FindViewById<TextView>(Resource.Id.textView);
-                resetButton = FindViewById<Button>(Resource.Id.resetButton);
-            }
-            catch (Exception ex)
-            {
-                Android.Util.Log.Error("MainActivity", "FindView Error: " + ex.Message);
-                CreateLayoutProgrammatically();
-            }
-            
-            // ✅ إذا كانت العناصر null، أنشئها برمجياً
-            if (numbersTextView == null || resetButton == null)
-            {
-                CreateLayoutProgrammatically();
-            }
             
             // ✅ عرض الأرقام
             if (numbersTextView != null)
@@ -119,7 +91,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ إنشاء الواجهة برمجياً (في حال فشل XML)
+    // ✅ إنشاء الواجهة برمجياً
     private void CreateLayoutProgrammatically()
     {
         LinearLayout mainLayout = new LinearLayout(this);
@@ -131,14 +103,13 @@ public class MainActivity : Activity
         titleTextView.Text = "📊 الأرقام (1-150):";
         titleTextView.TextSize = 18;
         titleTextView.SetTextColor(Color.Black);
-        titleTextView.SetTextSize(Android.Util.ComplexUnitType.Sp, 18);
+        titleTextView.Gravity = GravityFlags.Center;
         
         numbersTextView = new TextView(this);
         numbersTextView.Text = "";
         numbersTextView.TextSize = 12;
         numbersTextView.SetTextColor(Color.Black);
-        numbersTextView.SetTextSize(Android.Util.ComplexUnitType.Sp, 12);
-        numbersTextView.SetGravity(GravityFlags.Center);
+        numbersTextView.Gravity = GravityFlags.Center;
         
         resetButton = new Button(this);
         resetButton.Text = "🔄 إظهار الأرقام الأصلية";
