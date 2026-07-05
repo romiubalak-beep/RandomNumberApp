@@ -71,9 +71,11 @@ public class FloatingButtonService : Service
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ وظيفة الزر العائم
+            // ✅ وظيفة الزر العائم - مع طباعة للتأكد من الضغط
             floatingButton.Click += (s, e) => {
                 isShuffling = !isShuffling;
+                Console.WriteLine("🔄 تم الضغط على الزر العائم - isShuffling: " + isShuffling);
+                
                 if (isShuffling)
                 {
                     // ✅ بدء الخلط
