@@ -16,9 +16,13 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     private Button floatingButton;
     private bool isCreated = false;
     
+    // متغيرات للسحب
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
     private bool isDragging = false;
+
+    // ✅ مثل Klick'r: حالة الخدمة
+    private bool isServiceStarted = false;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -56,7 +60,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
-                    ToggleShuffling();
+                    ToggleService();
                 }
                 isDragging = false;
             };
@@ -93,14 +97,21 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    private void ToggleShuffling()
+    // ✅ مثل Klick'r: تبديل حالة الخدمة (تشغيل/إيقاف)
+    private void ToggleService()
     {
-        if (floatingButton.Text == "▶")
+        isServiceStarted = !isServiceStarted;
+        
+        if (isServiceStarted)
         {
             floatingButton.Text = "⏹";
             floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
             SendBroadcast(new Intent("START_SHUFFLING"));
             Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+            
+            // ✅ مثل Klick'r: بدء خدمة إمكانية الوصول
+            Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
+            StartService(tapServiceIntent);
         }
         else
         {
@@ -108,6 +119,10 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
             SendBroadcast(new Intent("STOP_SHUFFLING"));
             Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+            
+            // ✅ مثل Klick'r: إيقاف خدمة إمكانية الوصول
+            Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
+            StopService(tapServiceIntent);
         }
     }
 
