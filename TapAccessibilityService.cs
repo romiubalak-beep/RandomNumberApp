@@ -2,11 +2,12 @@ using Android.App;
 using Android.AccessibilityServices;
 using Android.OS;
 using Android.Views;
+using Android.Views.Accessibility;
 
 [Service(Permission = "android.permission.BIND_ACCESSIBILITY_SERVICE")]
 public class TapAccessibilityService : AccessibilityService
 {
-    public override void OnAccessibilityEvent(AccessibilityEvent? e)
+    public override void OnAccessibilityEvent(AccessibilityEvent e)
     {
         // معالجة الأحداث
     }
@@ -20,7 +21,6 @@ public class TapAccessibilityService : AccessibilityService
     {
         try
         {
-            // ✅ استخدام Android.Graphics.Path
             var path = new Android.Graphics.Path();
             path.MoveTo(x, y);
             
