@@ -12,7 +12,9 @@ using System.Security.Cryptography;
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
 {
-    private TextView textView;
+    private TextView numbersTextView;
+    private TextView titleTextView;
+    private Button resetButton;
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
@@ -24,6 +26,9 @@ public class MainActivity : Activity
     protected override void OnCreate(Bundle savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        
+        // ✅ استخدام ملف XML
+        SetContentView(Resource.Layout.activity_main);
         
         try
         {
@@ -37,6 +42,14 @@ public class MainActivity : Activity
             }
             currentNumbers = new List<int>(originalNumbers);
             
+            // ✅ ربط العناصر من XML
+            numbersTextView = FindViewById<TextView>(Resource.Id.numbersTextView);
+            titleTextView = FindViewById<TextView>(Resource.Id.textView);
+            resetButton = FindViewById<Button>(Resource.Id.resetButton);
+            
+            // ✅ عرض الأرقام
+            numbersTextView.Text = FormatNumbers(currentNumbers);
+            
             CheckOverlayPermission();
             
             if (!accessibilityChecked)
@@ -45,36 +58,11 @@ public class MainActivity : Activity
                 CheckAccessibilityPermission();
             }
             
-            LinearLayout mainLayout = new LinearLayout(this);
-            mainLayout.Orientation = Orientation.Vertical;
-            mainLayout.SetPadding(50, 50, 50, 50);
-            mainLayout.SetGravity(GravityFlags.Center);
-            
-            textView = new TextView(this);
-            textView.Text = FormatNumbers(currentNumbers);
-            textView.TextSize = 14;
-            textView.SetTextColor(Color.Black);
-            
-            Button resetButton = new Button(this);
-            resetButton.Text = "🔄 إظهار الأرقام الأصلية";
-            resetButton.SetTextColor(Color.White);
-            resetButton.SetBackgroundColor(Color.Gray);
             resetButton.Click += (s, e) => {
                 currentNumbers = new List<int>(originalNumbers);
-                textView.Text = FormatNumbers(currentNumbers);
+                numbersTextView.Text = FormatNumbers(currentNumbers);
                 Toast.MakeText(this, "تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
             };
-            
-            mainLayout.AddView(textView);
-            mainLayout.AddView(resetButton);
-            
-            LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MatchParent,
-                LinearLayout.LayoutParams.WrapContent);
-            params1.SetMargins(0, 0, 0, 20);
-            textView.LayoutParameters = params1;
-            
-            SetContentView(mainLayout);
             
             StartFloatingButtonService();
             
@@ -118,7 +106,7 @@ public class MainActivity : Activity
 
     private string FormatNumbers(List<int> numbers)
     {
-        string result = "📊 الأرقام (1-150):\n";
+        string result = "";
         int count = 0;
         foreach (int num in numbers)
         {
@@ -190,7 +178,7 @@ public class MainActivity : Activity
                     activity.cancellationToken.Cancel();
                     activity.currentNumbers = new List<int>(activity.originalNumbers);
                     activity.RunOnUiThread(() => {
-                        activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
+                        activity.numbersTextView.Text = activity.FormatNumbers(activity.currentNumbers);
                     });
                     Toast.MakeText(activity, "⏹ إيقاف الخلط", ToastLength.Short).Show();
                 }
@@ -214,7 +202,7 @@ public class MainActivity : Activity
             cancellationToken.Cancel();
             currentNumbers = new List<int>(originalNumbers);
             RunOnUiThread(() => {
-                textView.Text = FormatNumbers(currentNumbers);
+                numbersTextView.Text = FormatNumbers(currentNumbers);
                 Toast.MakeText(this, "✅ تم العثور على الرقم المستهدف", ToastLength.Short).Show();
             });
         }
@@ -256,7 +244,7 @@ public class MainActivity : Activity
                 }
                 
                 RunOnUiThread(() => {
-                    textView.Text = FormatNumbers(currentNumbers);
+                    numbersTextView.Text = FormatNumbers(currentNumbers);
                 });
                 
                 if (currentNumbers[0] == 1 || currentNumbers[0] == 2 || currentNumbers[0] == 3)
@@ -269,7 +257,7 @@ public class MainActivity : Activity
                     currentNumbers = new List<int>(originalNumbers);
                     
                     RunOnUiThread(() => {
-                        textView.Text = FormatNumbers(currentNumbers);
+                        numbersTextView.Text = FormatNumbers(currentNumbers);
                         Toast.MakeText(this, "✅ تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
                     });
                     
@@ -285,7 +273,7 @@ public class MainActivity : Activity
         {
             currentNumbers = new List<int>(originalNumbers);
             RunOnUiThread(() => {
-                textView.Text = FormatNumbers(currentNumbers);
+                numbersTextView.Text = FormatNumbers(currentNumbers);
                 Toast.MakeText(this, "⏹ تم إيقاف الخلط", ToastLength.Short).Show();
             });
         }
