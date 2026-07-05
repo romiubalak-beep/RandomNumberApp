@@ -18,7 +18,6 @@ public class FloatingButtonService : Service
     private bool isCreated = false;
     private BroadcastReceiver receiver;
     private bool isShuffling = false;
-    private bool isPaused = false;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -37,7 +36,8 @@ public class FloatingButtonService : Service
         receiver = new FloatingButtonReceiver();
         IntentFilter filter = new IntentFilter();
         filter.AddAction("CHANGE_FLOATING_BUTTON_COLOR");
-        filter.AddAction("FOUND_TARGET"); // ✅ استقبال إشارة العثور على الرقم المستهدف
+        filter.AddAction("FOUND_TARGET");
+        filter.AddAction("SYNC_BUTTON_STATE"); // ✅ مزامنة حالة الزر
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -71,8 +71,8 @@ public class FloatingButtonService : Service
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
+            // ✅ نفس وظيفة زر بدء الخلط داخل التطبيق
             floatingButton.Click += (s, e) => {
-                // ✅ التحكم بالخلط بغض النظر عن حالة isPaused
                 isShuffling = !isShuffling;
                 if (isShuffling)
                 {
@@ -81,7 +81,6 @@ public class FloatingButtonService : Service
                     Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
                     Intent startIntent = new Intent("START_SHUFFLING");
                     SendBroadcast(startIntent);
-                    isPaused = false; // ✅ إلغاء حالة التوقف المؤقت
                 }
                 else
                 {
@@ -147,8 +146,32 @@ public class FloatingButtonService : Service
             }
             else if (intent.Action == "FOUND_TARGET")
             {
-                // ✅ عند العثور على الرقم المستهدف، تغيير حالة الزر العائم
                 service.OnTargetFound();
+            }
+            else if (intent.Action == "SYNC_BUTTON_STATE")
+            {
+                // ✅ مزامنة حالة الزر مع زر التطبيق الداخلي
+                bool isRunning = intent.GetBooleanExtra("isRunning", false);
+                service.SyncButtonState(isRunning);
+            }
+        }
+    }
+
+    private void SyncButtonState(bool isRunning)
+    {
+        if (floatingButton != null && isCreated)
+        {
+            if (isRunning)
+            {
+                floatingButton.Text = "⏹";
+                floatingButton.SetBackgroundColor(Color.Green);
+                isShuffling = true;
+            }
+            else
+            {
+                floatingButton.Text = "▶";
+                floatingButton.SetBackgroundColor(Color.Blue);
+                isShuffling = false;
             }
         }
     }
@@ -157,10 +180,9 @@ public class FloatingButtonService : Service
     {
         if (floatingButton != null && isCreated)
         {
-            // ✅ تغيير الزر العائم إلى حالة "توقف مؤقت"
+            // ✅ عند العثور على الرقم المستهدف، يصبح الزر في حالة "توقف مؤقت"
             floatingButton.Text = "⏸";
             floatingButton.SetBackgroundColor(Color.Orange);
-            isPaused = true;
             isShuffling = false;
             Toast.MakeText(this, "⏸ توقف الخلط - تم العثور على الرقم المستهدف", ToastLength.Short).Show();
             
@@ -172,7 +194,7 @@ public class FloatingButtonService : Service
 
     private void ChangeButtonColor()
     {
-        if (floatingButton != null && isCreated && !isPaused)
+        if (floatingButton != null && isCreated)
         {
             try
             {
