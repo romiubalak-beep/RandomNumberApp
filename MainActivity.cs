@@ -20,7 +20,6 @@ public class MainActivity : Activity
     private List<int> originalNumbers;
     private List<int> currentNumbers;
     private bool isShuffling = false;
-    private Button fabButton;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -46,7 +45,6 @@ public class MainActivity : Activity
                 CheckAccessibilityPermission();
             }
             
-            // ✅ إنشاء الواجهة الرئيسية
             LinearLayout mainLayout = new LinearLayout(this);
             mainLayout.Orientation = Orientation.Vertical;
             mainLayout.SetPadding(50, 50, 50, 50);
@@ -78,7 +76,7 @@ public class MainActivity : Activity
             
             SetContentView(mainLayout);
             
-            // ✅ بدء خدمة الزر العائم (فوق التطبيقات)
+            // ✅ بدء خدمة الزر العائم
             StartFloatingButtonService();
             
             shuffleReceiver = new ShuffleBroadcastReceiver();
@@ -104,7 +102,6 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ بدء خدمة الزر العائم
     private void StartFloatingButtonService()
     {
         try
@@ -183,7 +180,6 @@ public class MainActivity : Activity
                     activity.isShuffling = true;
                     activity.cancellationToken = new System.Threading.CancellationTokenSource();
                     activity.StartFastShuffling(activity.cancellationToken.Token);
-                    Toast.MakeText(activity, "▶ بدء الخلط", ToastLength.Short).Show();
                 }
             }
             else if (intent.Action == "STOP_SHUFFLING")
@@ -195,7 +191,6 @@ public class MainActivity : Activity
                     activity.currentNumbers = new List<int>(activity.originalNumbers);
                     activity.RunOnUiThread(() => {
                         activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
-                        Toast.MakeText(activity, "⏹ إيقاف الخلط", ToastLength.Short).Show();
                     });
                 }
             }
@@ -219,7 +214,7 @@ public class MainActivity : Activity
             currentNumbers = new List<int>(originalNumbers);
             RunOnUiThread(() => {
                 textView.Text = FormatNumbers(currentNumbers);
-                Toast.MakeText(this, "✅ تم العثور على الرقم المستهدف - إعادة الأرقام الأصلية", ToastLength.Short).Show();
+                Toast.MakeText(this, "✅ تم العثور على الرقم المستهدف", ToastLength.Short).Show();
             });
         }
         catch (Exception ex)
@@ -290,7 +285,7 @@ public class MainActivity : Activity
             currentNumbers = new List<int>(originalNumbers);
             RunOnUiThread(() => {
                 textView.Text = FormatNumbers(currentNumbers);
-                Toast.MakeText(this, "⏹ تم إيقاف الخلط - إعادة الأرقام الأصلية", ToastLength.Short).Show();
+                Toast.MakeText(this, "⏹ تم إيقاف الخلط", ToastLength.Short).Show();
             });
         }
         catch (Exception ex)
