@@ -12,7 +12,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="@string/app_name"
+        android:label="RandomApp"
         android:theme="@android:style/Theme.Light">
         
         <activity
@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
 
-        <!-- ✅ خدمة الزر العائم (Foreground Service) -->
+        <!-- ✅ خدمة الزر العائم مع تحديد نوع الخدمة -->
         <service
             android:name=".FloatingButtonService"
             android:exported="false"
