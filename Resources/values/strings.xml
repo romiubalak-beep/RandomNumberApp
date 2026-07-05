@@ -2,4 +2,7 @@
 <resources>
     <string name="app_name">RandomApp</string>
     <string name="accessibility_service_description">يستخدم هذا التطبيق خدمة إمكانية الوصول لتنفيذ النقرات على التطبيقات الأخرى عند العثور على الأرقام المستهدفة</string>
+    <string name="notification_channel_name">RandomApp الخدمة الخلفية</string>
+    <string name="notification_title">RandomApp يعمل</string>
+    <string name="notification_text">الزر العائم يعمل في الخلفية</string>
 </resources>
