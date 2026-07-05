@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="الخدمة">
+        <CheckBoxPreference
+            android:key="started"
+            android:title="تشغيل الخدمة"
+            android:summary="تشغيل أو إيقاف خدمة الزر العائم"
+            android:defaultValue="true" />
+    </PreferenceCategory>
+    
+    <PreferenceCategory android:title="الإعدادات">
+        <Preference
+            android:key="returnDefaultSetting"
+            android:title="استعادة الإعدادات الافتراضية"
+            android:summary="إعادة جميع الإعدادات إلى الوضع الافتراضي" />
+    </PreferenceCategory>
+    
+    <PreferenceCategory android:title="حول">
+        <Preference
+            android:key="mail"
+            android:title="اتصل بالمطور"
+            android:summary="إرسال بريد إلكتروني إلى المطور" />
+    </PreferenceCategory>
+</PreferenceScreen>
