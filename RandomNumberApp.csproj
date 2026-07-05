@@ -14,10 +14,4 @@
   <PropertyGroup>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- ✅ حزم AndroidX المتوافقة -->
-    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.6.1.3" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.9.0.2" />
-  </ItemGroup>
 </Project>
