@@ -1,9 +1,7 @@
 using Android.App;
 using Android.AccessibilityServices;
-using Android.Views;
-using Android.Content;
 using Android.OS;
-using Android.Runtime;
+using Android.Views;
 
 [Service(Permission = "android.permission.BIND_ACCESSIBILITY_SERVICE")]
 public class TapAccessibilityService : AccessibilityService
@@ -20,7 +18,6 @@ public class TapAccessibilityService : AccessibilityService
         // مقاطعة
     }
 
-    [Export]
     public void PerformTap(int x, int y)
     {
         handler.Post(() =>
@@ -35,7 +32,7 @@ public class TapAccessibilityService : AccessibilityService
                 
                 DispatchGesture(builder.Build(), null, null);
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 Android.Util.Log.Error("TapService", "Tap Error: " + ex.Message);
             }
