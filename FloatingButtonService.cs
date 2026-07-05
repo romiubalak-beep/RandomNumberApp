@@ -54,7 +54,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.SetPadding(20, 20, 20, 20);
             floatingButton.SetOnTouchListener(this);
             
-            // ✅ تأكد من أن حدث الضغط يعمل
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
@@ -116,7 +115,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 SendBroadcast(new Intent("START_SHUFFLING"));
                 Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
                 
-                // ✅ تشغيل خدمة إمكانية الوصول
                 Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
                 StartService(tapServiceIntent);
             }
@@ -127,7 +125,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 SendBroadcast(new Intent("STOP_SHUFFLING"));
                 Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
                 
-                // ✅ إيقاف خدمة إمكانية الوصول
                 Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
                 StopService(tapServiceIntent);
             }
