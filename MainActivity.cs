@@ -27,8 +27,17 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         
-        // ✅ استخدام ملف XML
-        SetContentView(Resource.Layout.activity_main);
+        // ✅ استخدام ملف XML مع معالجة الأخطاء
+        try
+        {
+            SetContentView(Resource.Layout.activity_main);
+        }
+        catch (Exception ex)
+        {
+            // ✅ إذا فشل تحميل XML، أنشئ الواجهة برمجياً
+            Android.Util.Log.Error("MainActivity", "XML Error: " + ex.Message);
+            CreateLayoutProgrammatically();
+        }
         
         try
         {
@@ -42,13 +51,30 @@ public class MainActivity : Activity
             }
             currentNumbers = new List<int>(originalNumbers);
             
-            // ✅ ربط العناصر من XML
-            numbersTextView = FindViewById<TextView>(Resource.Id.numbersTextView);
-            titleTextView = FindViewById<TextView>(Resource.Id.textView);
-            resetButton = FindViewById<Button>(Resource.Id.resetButton);
+            // ✅ ربط العناصر من XML (إذا كانت موجودة)
+            try
+            {
+                numbersTextView = FindViewById<TextView>(Resource.Id.numbersTextView);
+                titleTextView = FindViewById<TextView>(Resource.Id.textView);
+                resetButton = FindViewById<Button>(Resource.Id.resetButton);
+            }
+            catch (Exception ex)
+            {
+                Android.Util.Log.Error("MainActivity", "FindView Error: " + ex.Message);
+                CreateLayoutProgrammatically();
+            }
+            
+            // ✅ إذا كانت العناصر null، أنشئها برمجياً
+            if (numbersTextView == null || resetButton == null)
+            {
+                CreateLayoutProgrammatically();
+            }
             
             // ✅ عرض الأرقام
-            numbersTextView.Text = FormatNumbers(currentNumbers);
+            if (numbersTextView != null)
+            {
+                numbersTextView.Text = FormatNumbers(currentNumbers);
+            }
             
             CheckOverlayPermission();
             
@@ -58,11 +84,15 @@ public class MainActivity : Activity
                 CheckAccessibilityPermission();
             }
             
-            resetButton.Click += (s, e) => {
-                currentNumbers = new List<int>(originalNumbers);
-                numbersTextView.Text = FormatNumbers(currentNumbers);
-                Toast.MakeText(this, "تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
-            };
+            if (resetButton != null)
+            {
+                resetButton.Click += (s, e) => {
+                    currentNumbers = new List<int>(originalNumbers);
+                    if (numbersTextView != null)
+                        numbersTextView.Text = FormatNumbers(currentNumbers);
+                    Toast.MakeText(this, "تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
+                };
+            }
             
             StartFloatingButtonService();
             
@@ -87,6 +117,51 @@ public class MainActivity : Activity
             Toast.MakeText(this, "خطأ في التهيئة: " + ex.Message, ToastLength.Long).Show();
             Android.Util.Log.Error("MainActivity", "OnCreate Error: " + ex.Message);
         }
+    }
+
+    // ✅ إنشاء الواجهة برمجياً (في حال فشل XML)
+    private void CreateLayoutProgrammatically()
+    {
+        LinearLayout mainLayout = new LinearLayout(this);
+        mainLayout.Orientation = Orientation.Vertical;
+        mainLayout.SetPadding(50, 50, 50, 50);
+        mainLayout.SetGravity(GravityFlags.Center);
+        
+        titleTextView = new TextView(this);
+        titleTextView.Text = "📊 الأرقام (1-150):";
+        titleTextView.TextSize = 18;
+        titleTextView.SetTextColor(Color.Black);
+        titleTextView.SetTextSize(Android.Util.ComplexUnitType.Sp, 18);
+        
+        numbersTextView = new TextView(this);
+        numbersTextView.Text = "";
+        numbersTextView.TextSize = 12;
+        numbersTextView.SetTextColor(Color.Black);
+        numbersTextView.SetTextSize(Android.Util.ComplexUnitType.Sp, 12);
+        numbersTextView.SetGravity(GravityFlags.Center);
+        
+        resetButton = new Button(this);
+        resetButton.Text = "🔄 إظهار الأرقام الأصلية";
+        resetButton.SetTextColor(Color.White);
+        resetButton.SetBackgroundColor(Color.Gray);
+        
+        LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MatchParent,
+            LinearLayout.LayoutParams.WrapContent);
+        params1.SetMargins(0, 0, 0, 20);
+        numbersTextView.LayoutParameters = params1;
+        
+        LinearLayout.LayoutParams params2 = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MatchParent,
+            LinearLayout.LayoutParams.WrapContent);
+        params2.SetMargins(0, 0, 0, 20);
+        titleTextView.LayoutParameters = params2;
+        
+        mainLayout.AddView(titleTextView);
+        mainLayout.AddView(numbersTextView);
+        mainLayout.AddView(resetButton);
+        
+        SetContentView(mainLayout);
     }
 
     private void StartFloatingButtonService()
@@ -178,7 +253,8 @@ public class MainActivity : Activity
                     activity.cancellationToken.Cancel();
                     activity.currentNumbers = new List<int>(activity.originalNumbers);
                     activity.RunOnUiThread(() => {
-                        activity.numbersTextView.Text = activity.FormatNumbers(activity.currentNumbers);
+                        if (activity.numbersTextView != null)
+                            activity.numbersTextView.Text = activity.FormatNumbers(activity.currentNumbers);
                     });
                     Toast.MakeText(activity, "⏹ إيقاف الخلط", ToastLength.Short).Show();
                 }
@@ -202,7 +278,8 @@ public class MainActivity : Activity
             cancellationToken.Cancel();
             currentNumbers = new List<int>(originalNumbers);
             RunOnUiThread(() => {
-                numbersTextView.Text = FormatNumbers(currentNumbers);
+                if (numbersTextView != null)
+                    numbersTextView.Text = FormatNumbers(currentNumbers);
                 Toast.MakeText(this, "✅ تم العثور على الرقم المستهدف", ToastLength.Short).Show();
             });
         }
@@ -244,7 +321,8 @@ public class MainActivity : Activity
                 }
                 
                 RunOnUiThread(() => {
-                    numbersTextView.Text = FormatNumbers(currentNumbers);
+                    if (numbersTextView != null)
+                        numbersTextView.Text = FormatNumbers(currentNumbers);
                 });
                 
                 if (currentNumbers[0] == 1 || currentNumbers[0] == 2 || currentNumbers[0] == 3)
@@ -257,7 +335,8 @@ public class MainActivity : Activity
                     currentNumbers = new List<int>(originalNumbers);
                     
                     RunOnUiThread(() => {
-                        numbersTextView.Text = FormatNumbers(currentNumbers);
+                        if (numbersTextView != null)
+                            numbersTextView.Text = FormatNumbers(currentNumbers);
                         Toast.MakeText(this, "✅ تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
                     });
                     
@@ -273,7 +352,8 @@ public class MainActivity : Activity
         {
             currentNumbers = new List<int>(originalNumbers);
             RunOnUiThread(() => {
-                numbersTextView.Text = FormatNumbers(currentNumbers);
+                if (numbersTextView != null)
+                    numbersTextView.Text = FormatNumbers(currentNumbers);
                 Toast.MakeText(this, "⏹ تم إيقاف الخلط", ToastLength.Short).Show();
             });
         }
