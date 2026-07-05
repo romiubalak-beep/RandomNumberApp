@@ -37,7 +37,7 @@ public class FloatingButtonService : Service
         IntentFilter filter = new IntentFilter();
         filter.AddAction("CHANGE_FLOATING_BUTTON_COLOR");
         filter.AddAction("FOUND_TARGET");
-        filter.AddAction("SYNC_BUTTON_STATE"); // ✅ مزامنة حالة الزر
+        filter.AddAction("SYNC_BUTTON_STATE");
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -71,11 +71,14 @@ public class FloatingButtonService : Service
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ نفس وظيفة زر بدء الخلط داخل التطبيق
+            // ✅ وظيفة الزر العائم - نفس زر التطبيق
             floatingButton.Click += (s, e) => {
+                // ✅ تبديل حالة الخلط (تشغيل/إيقاف)
                 isShuffling = !isShuffling;
+                
                 if (isShuffling)
                 {
+                    // ✅ بدء الخلط
                     floatingButton.Text = "⏹";
                     floatingButton.SetBackgroundColor(Color.Green);
                     Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
@@ -84,6 +87,7 @@ public class FloatingButtonService : Service
                 }
                 else
                 {
+                    // ✅ إيقاف الخلط
                     floatingButton.Text = "▶";
                     floatingButton.SetBackgroundColor(Color.Blue);
                     Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
@@ -180,13 +184,11 @@ public class FloatingButtonService : Service
     {
         if (floatingButton != null && isCreated)
         {
-            // ✅ عند العثور على الرقم المستهدف، يصبح الزر في حالة "توقف مؤقت"
             floatingButton.Text = "⏸";
             floatingButton.SetBackgroundColor(Color.Orange);
             isShuffling = false;
             Toast.MakeText(this, "⏸ توقف الخلط - تم العثور على الرقم المستهدف", ToastLength.Short).Show();
             
-            // ✅ إرسال إشارة إيقاف الخلط
             Intent stopIntent = new Intent("STOP_SHUFFLING");
             SendBroadcast(stopIntent);
         }
