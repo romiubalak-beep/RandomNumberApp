@@ -19,13 +19,15 @@ public class TapAccessibilityService : AccessibilityService
         // مقاطعة
     }
 
-    public override void OnServiceConnected()
+    // ✅ تغيير من public إلى protected
+    protected override void OnServiceConnected()
     {
         base.OnServiceConnected();
         Android.Util.Log.Info("TapService", "✅ Service connected");
     }
 
-    public override void OnDestroy()
+    // ✅ تغيير من public إلى protected
+    protected override void OnDestroy()
     {
         base.OnDestroy();
         Android.Util.Log.Info("TapService", "❌ Service destroyed");
