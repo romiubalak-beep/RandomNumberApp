@@ -18,6 +18,7 @@ public class MainActivity : Activity
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
+    private bool accessibilityChecked = false; // ✅ لمنع التكرار
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -27,7 +28,13 @@ public class MainActivity : Activity
         cancellationToken = new System.Threading.CancellationTokenSource();
         
         CheckOverlayPermission();
-        CheckAccessibilityPermission();
+        
+        // ✅ التحقق من صلاحية إمكانية الوصول مرة واحدة فقط
+        if (!accessibilityChecked)
+        {
+            accessibilityChecked = true;
+            CheckAccessibilityPermission();
+        }
         
         LinearLayout layout = new LinearLayout(this);
         layout.Orientation = Orientation.Vertical;
@@ -55,7 +62,7 @@ public class MainActivity : Activity
         filter.AddAction("START_SHUFFLING");
         filter.AddAction("STOP_SHUFFLING");
         filter.AddAction("PERFORM_TAP");
-        filter.AddAction("FOUND_TARGET"); // ✅ إضافة إجراء جديد للعثور على الرقم المستهدف
+        filter.AddAction("FOUND_TARGET");
         
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
         {
@@ -84,6 +91,14 @@ public class MainActivity : Activity
     {
         try
         {
+            // ✅ التحقق مما إذا كانت الخدمة مفعلة بالفعل
+            if (IsAccessibilityServiceEnabled())
+            {
+                // ✅ الخدمة مفعلة، لا حاجة لفتح الإعدادات
+                return;
+            }
+            
+            // ✅ فقط إذا لم تكن مفعلة، نطلب من المستخدم تفعيلها
             Intent intent = new Intent(Android.Provider.Settings.ActionAccessibilitySettings);
             StartActivity(intent);
             Toast.MakeText(this, "الرجاء تفعيل خدمة إمكانية الوصول للتطبيق", ToastLength.Long).Show();
@@ -91,6 +106,26 @@ public class MainActivity : Activity
         catch (Exception ex)
         {
             Android.Util.Log.Error("MainActivity", "Accessibility Error: " + ex.Message);
+        }
+    }
+
+    private bool IsAccessibilityServiceEnabled()
+    {
+        try
+        {
+            string serviceName = "com.example.randomapp/com.example.randomapp.TapAccessibilityService";
+            Android.Content.ISharedPreferences prefs = GetSharedPreferences("accessibility_prefs", FileCreationMode.Private);
+            string enabledServices = Android.Provider.Settings.Secure.GetString(ContentResolver, Android.Provider.Settings.Secure.EnabledAccessibilityServices);
+            
+            if (!string.IsNullOrEmpty(enabledServices))
+            {
+                return enabledServices.Contains(serviceName);
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
         }
     }
 
@@ -125,7 +160,6 @@ public class MainActivity : Activity
             }
             else if (intent.Action == "FOUND_TARGET")
             {
-                // ✅ إيقاف الخلط عند العثور على الرقم المستهدف
                 if (activity.isRunning)
                 {
                     activity.isRunning = false;
@@ -206,28 +240,20 @@ public class MainActivity : Activity
                         SendBroadcast(colorIntent);
                     });
                     
-                    // ✅ إيقاف الخلط فوراً
                     isRunning = false;
                     
-                    // ✅ إرسال إشارة بأنه تم العثور على الرقم المستهدف
                     Intent foundIntent = new Intent("FOUND_TARGET");
                     foundIntent.PutExtra("number", numbers[0]);
                     SendBroadcast(foundIntent);
                     
-                    // ✅ تحديث واجهة المستخدم
                     RunOnUiThread(() => {
                         startButton.Text = "▶ بدء الخلط";
                         textView.Text = "⏸ توقف: تم العثور على " + numbers[0] + " - الخلط متوقف";
                     });
                     
-                    // ✅ تنفيذ النقرة على منتصف الشاشة
                     PerformTapOnCenter();
                     
-                    // ✅ انتظار ثانية واحدة (بدون استئناف الخلط)
                     await System.Threading.Tasks.Task.Delay(1000);
-                    
-                    // ❌ إزالة استئناف الخلط التلقائي
-                    // الخلط يظل متوقفاً حتى يضغط المستخدم على الزر العائم مرة أخرى
                 }
                 
                 await System.Threading.Tasks.Task.Delay(100, token);
