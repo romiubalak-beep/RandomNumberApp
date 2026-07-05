@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.randomapp">
 
-    <!-- ✅ صلاحيات Klick'r -->
+    <!-- ✅ الصلاحيات -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.ACCESSIBILITY_SERVICE" />
@@ -10,7 +10,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="RandomApp"
+        android:label="@string/app_name"
         android:theme="@android:style/Theme.Light">
         
         <activity
@@ -22,17 +22,14 @@
             </intent-filter>
         </activity>
 
-        <!-- ✅ خدمة الزر العائم (مثل FloatingMenu في Klick'r) -->
         <service
             android:name=".FloatingButtonService"
             android:exported="false"
             android:stopWithTask="true" />
 
-        <!-- ✅ خدمة إمكانية الوصول (مثل SmartAutoClickerService في Klick'r) -->
         <service
             android:name=".TapAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:foregroundServiceType="mediaProjection"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
