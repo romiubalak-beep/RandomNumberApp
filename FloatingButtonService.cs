@@ -21,9 +21,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     private bool isDragging = false;
     private bool isServiceStarted = false;
 
-    private const int NOTIFICATION_ID = 1001;
-    private const string CHANNEL_ID = "randomapp_channel";
-
     public override IBinder OnBind(Intent intent)
     {
         return null;
@@ -33,48 +30,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     {
         base.OnCreate();
         
-        CreateNotificationChannel();
-        
-        // ✅ بدء Foreground Service
-        StartForeground(NOTIFICATION_ID, CreateNotification());
-        
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(CreateFloatingButton, 1500);
-    }
-
-    private void CreateNotificationChannel()
-    {
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-        {
-            var channel = new NotificationChannel(
-                CHANNEL_ID,
-                "RandomApp الخدمة الخلفية",
-                NotificationImportance.Low)
-            {
-                Description = "إشعارات خدمة الخلفية",
-                LockscreenVisibility = NotificationVisibility.Private
-            };
-            
-            var manager = (NotificationManager)GetSystemService(NotificationService);
-            manager.CreateNotificationChannel(channel);
-        }
-    }
-
-    private Notification CreateNotification()
-    {
-        var intent = new Intent(this, typeof(MainActivity));
-        intent.AddFlags(ActivityFlags.SingleTop);
-        var pendingIntent = PendingIntent.GetActivity(this, 0, intent, PendingIntentFlags.Immutable);
-
-        var builder = new Notification.Builder(this, CHANNEL_ID)
-            .SetContentTitle("RandomApp يعمل")
-            .SetContentText("الزر العائم يعمل في الخلفية")
-            .SetSmallIcon(Android.Resource.Drawable.IcMenuCamera)
-            .SetContentIntent(pendingIntent)
-            .SetOngoing(true)
-            .SetPriority((int)NotificationPriority.Low);
-
-        return builder.Build();
     }
 
     private void CreateFloatingButton()
@@ -151,8 +108,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             
             Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
             StartService(tapServiceIntent);
-            
-            UpdateNotification("▶ الخلط قيد التشغيل");
         }
         else
         {
@@ -163,22 +118,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             
             Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
             StopService(tapServiceIntent);
-            
-            UpdateNotification("⏹ الخلط متوقف");
         }
-    }
-
-    private void UpdateNotification(string status)
-    {
-        var builder = new Notification.Builder(this, CHANNEL_ID)
-            .SetContentTitle("RandomApp يعمل")
-            .SetContentText(status)
-            .SetSmallIcon(Android.Resource.Drawable.IcMenuCamera)
-            .SetOngoing(true)
-            .SetPriority((int)NotificationPriority.Low);
-
-        var notificationManager = (NotificationManager)GetSystemService(NotificationService);
-        notificationManager.Notify(NOTIFICATION_ID, builder.Build());
     }
 
     public bool OnTouch(View v, MotionEvent e)
@@ -233,7 +173,5 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 Android.Util.Log.Error("FloatingService", "RemoveView Error: " + ex.Message);
             }
         }
-        
-        StopForeground(StopForegroundFlags.Remove);
     }
 }
