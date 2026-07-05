@@ -9,7 +9,7 @@ using Android.Provider;
 using System;
 
 [Service]
-public class FloatingButtonService : Service
+public class FloatingButtonService : Service, View.IOnTouchListener
 {
     private IWindowManager windowManager;
     private View floatingView;
@@ -19,6 +19,7 @@ public class FloatingButtonService : Service
     private BroadcastReceiver receiver;
     private bool isShuffling = false;
 
+    // ✅ متغيرات السحب
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
     private bool isDragging = false;
@@ -69,41 +70,24 @@ public class FloatingButtonService : Service
                 }
             }
 
+            // ✅ إنشاء الزر العائم
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
             floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 18);
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ إضافة حدث الضغط مع التمييز بين الضغط والسحب
+            // ✅ تعيين مستمع اللمس
+            floatingButton.SetOnTouchListener(this);
+            
+            // ✅ إضافة حدث الضغط (يتم تنفيذه بعد التأكد من عدم السحب)
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
-                    isShuffling = !isShuffling;
-                    Console.WriteLine("🔄 تم الضغط على الزر العائم - isShuffling: " + isShuffling);
-                    
-                    if (isShuffling)
-                    {
-                        floatingButton.Text = "⏹";
-                        floatingButton.SetBackgroundColor(Color.Green);
-                        Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-                        Intent startIntent = new Intent("START_SHUFFLING");
-                        SendBroadcast(startIntent);
-                    }
-                    else
-                    {
-                        floatingButton.Text = "▶";
-                        floatingButton.SetBackgroundColor(Color.Blue);
-                        Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-                        Intent stopIntent = new Intent("STOP_SHUFFLING");
-                        SendBroadcast(stopIntent);
-                    }
+                    ToggleShuffling();
                 }
                 isDragging = false;
             };
-            
-            // ✅ إضافة حدث السحب (OnTouch)
-            floatingButton.SetOnTouchListener(new FloatingButtonTouchListener(this));
             
             LinearLayout container = new LinearLayout(this);
             container.AddView(floatingButton);
@@ -147,65 +131,69 @@ public class FloatingButtonService : Service
         }
     }
 
-    // ✅ كلاس مخصص لمعالجة اللمس والسحب
-    private class FloatingButtonTouchListener : Java.Lang.Object, View.IOnTouchListener
+    // ✅ دالة تبديل حالة الخلط
+    private void ToggleShuffling()
     {
-        private FloatingButtonService service;
-        private WindowManagerLayoutParams layoutParams;
-
-        public FloatingButtonTouchListener(FloatingButtonService service)
+        isShuffling = !isShuffling;
+        Console.WriteLine("🔄 تم الضغط على الزر العائم - isShuffling: " + isShuffling);
+        
+        if (isShuffling)
         {
-            this.service = service;
+            floatingButton.Text = "⏹";
+            floatingButton.SetBackgroundColor(Color.Green);
+            Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+            Intent startIntent = new Intent("START_SHUFFLING");
+            SendBroadcast(startIntent);
         }
-
-        public bool OnTouch(View? v, MotionEvent? e)
+        else
         {
-            if (e == null || service.windowManager == null || service.floatingView == null)
-                return false;
+            floatingButton.Text = "▶";
+            floatingButton.SetBackgroundColor(Color.Blue);
+            Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+            Intent stopIntent = new Intent("STOP_SHUFFLING");
+            SendBroadcast(stopIntent);
+        }
+    }
 
-            if (layoutParams == null)
-            {
-                try
-                {
-                    layoutParams = (WindowManagerLayoutParams)service.floatingView.LayoutParameters;
-                }
-                catch { return false; }
-            }
-
-            if (layoutParams == null) return false;
-
-            switch (e.Action)
-            {
-                case MotionEventActions.Down:
-                    service.initialX = layoutParams.X;
-                    service.initialY = layoutParams.Y;
-                    service.initialTouchX = e.RawX;
-                    service.initialTouchY = e.RawY;
-                    service.isDragging = false;
-                    return true;
-
-                case MotionEventActions.Move:
-                    float deltaX = e.RawX - service.initialTouchX;
-                    float deltaY = e.RawY - service.initialTouchY;
-                    
-                    if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
-                    {
-                        service.isDragging = true;
-                    }
-                    
-                    if (service.isDragging)
-                    {
-                        layoutParams.X = service.initialX + (int)deltaX;
-                        layoutParams.Y = service.initialY + (int)deltaY;
-                        service.windowManager.UpdateViewLayout(service.floatingView, layoutParams);
-                    }
-                    return true;
-
-                case MotionEventActions.Up:
-                    return true;
-            }
+    // ✅ تنفيذ واجهة IOnTouchListener
+    public bool OnTouch(View v, MotionEvent e)
+    {
+        if (windowManager == null || floatingView == null)
             return false;
+
+        var layoutParams = (WindowManagerLayoutParams)floatingView.LayoutParameters;
+
+        switch (e.Action)
+        {
+            case MotionEventActions.Down:
+                initialX = layoutParams.X;
+                initialY = layoutParams.Y;
+                initialTouchX = e.RawX;
+                initialTouchY = e.RawY;
+                isDragging = false;
+                return true;
+
+            case MotionEventActions.Move:
+                float deltaX = e.RawX - initialTouchX;
+                float deltaY = e.RawY - initialTouchY;
+                
+                if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
+                {
+                    isDragging = true;
+                }
+                
+                if (isDragging)
+                {
+                    layoutParams.X = initialX + (int)deltaX;
+                    layoutParams.Y = initialY + (int)deltaY;
+                    windowManager.UpdateViewLayout(floatingView, layoutParams);
+                }
+                return true;
+
+            case MotionEventActions.Up:
+                return true;
         }
+        return false;
     }
 
     private class FloatingButtonReceiver : BroadcastReceiver
