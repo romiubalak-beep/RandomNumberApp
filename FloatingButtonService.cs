@@ -11,7 +11,7 @@ using System;
 [Service]
 public class FloatingButtonService : Service
 {
-    private Android.Views.WindowManager windowManager;
+    private IWindowManager windowManager; // ✅ العودة إلى IWindowManager
     private View floatingView;
     private Button floatingButton;
     private bool isCreated = false;
@@ -71,8 +71,8 @@ public class FloatingButtonService : Service
             container.AddView(floatingButton);
             floatingView = container;
             
-            // ✅ استخدام WindowManager من Context
-            windowManager = (Android.Views.WindowManager)GetSystemService(WindowService);
+            // ✅ استخدام IWindowManager بدلاً من WindowManager
+            windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             
             if (windowManager == null)
             {
