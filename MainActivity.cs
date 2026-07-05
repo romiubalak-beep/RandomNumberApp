@@ -212,6 +212,7 @@ public class MainActivity : Activity
     {
         if (!isRunning)
         {
+            // ✅ بدء الخلط
             isRunning = true;
             startButton.Text = "⏹ إيقاف الخلط";
             startButton.SetBackgroundColor(Color.Red);
@@ -223,6 +224,7 @@ public class MainActivity : Activity
         }
         else
         {
+            // ✅ إيقاف الخلط
             isRunning = false;
             startButton.Text = "▶ بدء الخلط";
             startButton.SetBackgroundColor(Color.Blue);
@@ -269,6 +271,7 @@ public class MainActivity : Activity
                         SendBroadcast(colorIntent);
                     });
                     
+                    // ✅ إيقاف الخلط عند العثور على الرقم المستهدف
                     isRunning = false;
                     
                     Intent foundIntent = new Intent("FOUND_TARGET");
