@@ -7,15 +7,14 @@ using Android.Views.Accessibility;
 [Service(Permission = "android.permission.BIND_ACCESSIBILITY_SERVICE")]
 public class TapAccessibilityService : AccessibilityService
 {
-    // هذه الخدمة هي التي ستنفذ النقرات في التطبيقات الأخرى، مثل Klick'r تماماً
     public override void OnAccessibilityEvent(AccessibilityEvent? e)
     {
-        // هنا يمكنك إضافة كود لمراقبة الأحداث
+        // معالجة الأحداث
     }
 
     public override void OnInterrupt()
     {
-        // في حال تم مقاطعة الخدمة
+        // مقاطعة
     }
 
     public void PerformTap(int x, int y)
