@@ -6,8 +6,7 @@ using Android.Views;
 [Service(Permission = "android.permission.BIND_ACCESSIBILITY_SERVICE")]
 public class TapAccessibilityService : AccessibilityService
 {
-    // ✅ استخدم المسار الكامل: Android.Views.Accessibility.AccessibilityEvent
-    public override void OnAccessibilityEvent(Android.Views.Accessibility.AccessibilityEvent e)
+    public override void OnAccessibilityEvent(AccessibilityEvent? e)
     {
         // معالجة الأحداث
     }
@@ -21,7 +20,8 @@ public class TapAccessibilityService : AccessibilityService
     {
         try
         {
-            var path = new Path();
+            // ✅ استخدام Android.Graphics.Path
+            var path = new Android.Graphics.Path();
             path.MoveTo(x, y);
             
             var builder = new GestureDescription.Builder();
