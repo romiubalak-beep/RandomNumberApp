@@ -10,8 +10,7 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>
 
-  <!-- ✅ تجاهل التحذيرات غير الضرورية -->
-  <PropertyGroup>
-    <NoWarn>$(NoWarn);CS8765;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8622;CS1503;CS1061;CS0246;CS0534;CS0712;CS0723;CS0618;CA1416;CA1422</NoWarn>
-  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SuaveControls.FloatingActionButton" Version="2.0.0" />
+  </ItemGroup>
 </Project>
