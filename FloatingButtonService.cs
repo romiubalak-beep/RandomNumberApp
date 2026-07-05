@@ -9,16 +9,20 @@ using Android.Provider;
 using System;
 
 [Service]
-public class FloatingButtonService : Service
+public class FloatingButtonService : Service, View.IOnTouchListener
 {
-    private IWindowManager windowManager; // ✅ العودة إلى IWindowManager
+    private IWindowManager windowManager;
     private View floatingView;
     private Button floatingButton;
     private bool isCreated = false;
     
+    // ✅ متغيرات السحب (مثل Klick'r)
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
     private bool isDragging = false;
+
+    // ✅ متغيرات التحكم بالخلط
+    private bool isShuffling = false;
 
     public override IBinder OnBind(Intent intent)
     {
@@ -39,6 +43,7 @@ public class FloatingButtonService : Service
     {
         try
         {
+            // ✅ صلاحية العرض فوق التطبيقات (مثل Klick'r)
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
                 if (!Settings.CanDrawOverlays(this))
@@ -51,14 +56,18 @@ public class FloatingButtonService : Service
                 }
             }
 
+            // ✅ إنشاء الزر العائم (مثل Klick'r)
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
             floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 20);
             floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
             floatingButton.SetTextColor(Color.White);
             floatingButton.SetPadding(20, 20, 20, 20);
-            floatingButton.SetOnTouchListener(new FloatingButtonTouchListener(this));
             
+            // ✅ إضافة مستمع اللمس للسحب (مثل Klick'r)
+            floatingButton.SetOnTouchListener(this);
+            
+            // ✅ حدث الضغط (مثل Klick'r)
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
@@ -71,7 +80,7 @@ public class FloatingButtonService : Service
             container.AddView(floatingButton);
             floatingView = container;
             
-            // ✅ استخدام IWindowManager بدلاً من WindowManager
+            // ✅ استخدام IWindowManager (مثل Klick'r)
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             
             if (windowManager == null)
@@ -80,7 +89,7 @@ public class FloatingButtonService : Service
                 return;
             }
 
-            // ✅ استخدام WindowManagerTypes و WindowManagerFlags مباشرة
+            // ✅ إعدادات النافذة العائمة (مثل Klick'r)
             var layoutParams = new WindowManagerLayoutParams(
                 180, 180,
                 WindowManagerTypes.ApplicationOverlay,
@@ -91,7 +100,6 @@ public class FloatingButtonService : Service
             layoutParams.X = 50;
             layoutParams.Y = 200;
             
-            // ✅ إضافة الزر
             windowManager.AddView(floatingView, layoutParams);
             isCreated = true;
             Toast.MakeText(this, "✅ الزر العائم يعمل فوق التطبيقات", ToastLength.Short).Show();
@@ -103,6 +111,7 @@ public class FloatingButtonService : Service
         }
     }
 
+    // ✅ دالة تبديل حالة الخلط (مثل Klick'r)
     private void ToggleShuffling()
     {
         try
@@ -130,56 +139,45 @@ public class FloatingButtonService : Service
         }
     }
 
-    // ✅ كلاس مخصص للتعامل مع اللمس
-    private class FloatingButtonTouchListener : Java.Lang.Object, View.IOnTouchListener
+    // ✅ تنفيذ واجهة IOnTouchListener للسحب (مثل Klick'r)
+    public bool OnTouch(View v, MotionEvent e)
     {
-        private FloatingButtonService service;
-
-        public FloatingButtonTouchListener(FloatingButtonService service)
-        {
-            this.service = service;
-        }
-
-        public bool OnTouch(View? v, MotionEvent? e)
-        {
-            if (service.windowManager == null || service.floatingView == null || e == null)
-                return false;
-
-            var layoutParams = (WindowManagerLayoutParams)service.floatingView.LayoutParameters;
-            if (layoutParams == null) return false;
-
-            switch (e.Action)
-            {
-                case MotionEventActions.Down:
-                    service.initialX = layoutParams.X;
-                    service.initialY = layoutParams.Y;
-                    service.initialTouchX = e.RawX;
-                    service.initialTouchY = e.RawY;
-                    service.isDragging = false;
-                    return true;
-
-                case MotionEventActions.Move:
-                    float deltaX = e.RawX - service.initialTouchX;
-                    float deltaY = e.RawY - service.initialTouchY;
-                    
-                    if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
-                    {
-                        service.isDragging = true;
-                    }
-                    
-                    if (service.isDragging)
-                    {
-                        layoutParams.X = service.initialX + (int)deltaX;
-                        layoutParams.Y = service.initialY + (int)deltaY;
-                        service.windowManager.UpdateViewLayout(service.floatingView, layoutParams);
-                    }
-                    return true;
-
-                case MotionEventActions.Up:
-                    return true;
-            }
+        if (windowManager == null || floatingView == null)
             return false;
+
+        var layoutParams = (WindowManagerLayoutParams)floatingView.LayoutParameters;
+
+        switch (e.Action)
+        {
+            case MotionEventActions.Down:
+                initialX = layoutParams.X;
+                initialY = layoutParams.Y;
+                initialTouchX = e.RawX;
+                initialTouchY = e.RawY;
+                isDragging = false;
+                return true;
+
+            case MotionEventActions.Move:
+                float deltaX = e.RawX - initialTouchX;
+                float deltaY = e.RawY - initialTouchY;
+                
+                if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
+                {
+                    isDragging = true;
+                }
+                
+                if (isDragging)
+                {
+                    layoutParams.X = initialX + (int)deltaX;
+                    layoutParams.Y = initialY + (int)deltaY;
+                    windowManager.UpdateViewLayout(floatingView, layoutParams);
+                }
+                return true;
+
+            case MotionEventActions.Up:
+                return true;
         }
+        return false;
     }
 
     public override void OnDestroy()
