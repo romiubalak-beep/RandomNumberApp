@@ -10,18 +10,7 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>
 
-  <!-- ✅ تجاهل التحذيرات -->
   <PropertyGroup>
     <NoWarn>$(NoWarn);NU1605;CS0618;CS8765;CS8767;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8622;CS1503;CS1061;CS0246;CS0534;CS0712;CS0723;CA1416;CA1422</NoWarn>
   </PropertyGroup>
-
-  <!-- ✅ منع استخدام AndroidX مؤقتاً -->
-  <ItemGroup>
-    <PackageReference Remove="Xamarin.AndroidX.AppCompat" />
-    <PackageReference Remove="Xamarin.Google.Android.Material" />
-    <PackageReference Remove="Xamarin.AndroidX.Activity" />
-    <PackageReference Remove="Xamarin.AndroidX.Core" />
-    <PackageReference Remove="Xamarin.AndroidX.Lifecycle.LiveData" />
-    <PackageReference Remove="Xamarin.AndroidX.Lifecycle.ViewModel" />
-  </ItemGroup>
 </Project>
