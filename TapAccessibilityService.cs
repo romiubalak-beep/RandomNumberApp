@@ -7,7 +7,7 @@ using Android.Views.Accessibility;
 [Service(Permission = "android.permission.BIND_ACCESSIBILITY_SERVICE")]
 public class TapAccessibilityService : AccessibilityService
 {
-    public override void OnAccessibilityEvent(AccessibilityEvent e)
+    public override void OnAccessibilityEvent(AccessibilityEvent? e)
     {
         // معالجة الأحداث
     }
