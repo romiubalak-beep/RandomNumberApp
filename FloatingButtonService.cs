@@ -4,6 +4,8 @@ using Android.OS;
 using Android.Views;
 using Android.Graphics;
 using Android.Content;
+using Android.Provider; // ✅ إضافة this
+using Android.Runtime; // ✅ إضافة this
 using System;
 
 [Service]
@@ -35,10 +37,10 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     {
         try
         {
-            // ✅ التحقق من صلاحية العرض فوق التطبيقات
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.M && !Settings.CanDrawOverlays(this))
+            // ✅ استخدام Android.Provider.Settings
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M && !Android.Provider.Settings.CanDrawOverlays(this))
             {
-                Intent intent = new Intent(Settings.ActionManageOverlayPermission,
+                Intent intent = new Intent(Android.Provider.Settings.ActionManageOverlayPermission,
                     Android.Net.Uri.Parse("package:" + PackageName));
                 intent.AddFlags(ActivityFlags.NewTask);
                 StartActivity(intent);
@@ -56,7 +58,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
-                    // ✅ تبديل حالة الخلط
                     ToggleShuffling();
                 }
                 isDragging = false;
@@ -66,7 +67,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             container.AddView(floatingButton);
             floatingView = container;
             
-            // ✅ الحصول على WindowManager باستخدام JavaCast (كما في المشروع المرجعي) [citation:11]
+            // ✅ استخدام JavaCast بشكل صحيح
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             if (windowManager == null)
             {
@@ -74,7 +75,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return;
             }
 
-            // ✅ تحديد نوع النافذة حسب إصدار Android [citation:9]
             WindowManagerTypes windowType;
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
@@ -124,7 +124,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    // ✅ تنفيذ واجهة IOnTouchListener للسحب [citation:2][citation:4]
     public bool OnTouch(View v, MotionEvent e)
     {
         if (windowManager == null || floatingView == null)
