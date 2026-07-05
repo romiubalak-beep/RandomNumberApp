@@ -19,6 +19,7 @@ public class MainActivity : Activity
     private bool accessibilityChecked = false;
     private List<int> originalNumbers;
     private List<int> currentNumbers;
+    private bool isShuffling = false; // ✅ حالة الخلط
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -161,15 +162,21 @@ public class MainActivity : Activity
             var activity = (MainActivity)context;
             if (intent.Action == "START_SHUFFLING")
             {
+                // ✅ بدء الخلط
+                activity.isShuffling = true;
                 activity.cancellationToken = new System.Threading.CancellationTokenSource();
                 activity.StartFastShuffling(activity.cancellationToken.Token);
+                Toast.MakeText(activity, "✅ بدء الخلط...", ToastLength.Short).Show();
             }
             else if (intent.Action == "STOP_SHUFFLING")
             {
+                // ✅ إيقاف الخلط
+                activity.isShuffling = false;
                 activity.cancellationToken.Cancel();
                 activity.currentNumbers = new List<int>(activity.originalNumbers);
                 activity.RunOnUiThread(() => {
                     activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
+                    Toast.MakeText(activity, "⏹ تم إيقاف الخلط", ToastLength.Short).Show();
                 });
             }
             else if (intent.Action == "PERFORM_TAP")
@@ -178,9 +185,11 @@ public class MainActivity : Activity
             }
             else if (intent.Action == "FOUND_TARGET")
             {
+                activity.isShuffling = false;
                 activity.currentNumbers = new List<int>(activity.originalNumbers);
                 activity.RunOnUiThread(() => {
                     activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
+                    Toast.MakeText(activity, "✅ تم العثور على الرقم المستهدف", ToastLength.Short).Show();
                 });
             }
         }
@@ -204,8 +213,9 @@ public class MainActivity : Activity
     {
         try
         {
-            while (!token.IsCancellationRequested)
+            while (isShuffling && !token.IsCancellationRequested)
             {
+                // ✅ خلط الأرقام
                 int n = currentNumbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
@@ -217,10 +227,12 @@ public class MainActivity : Activity
                     currentNumbers[j] = temp;
                 }
                 
+                // ✅ تحديث الواجهة
                 RunOnUiThread(() => {
                     textView.Text = FormatNumbers(currentNumbers);
                 });
                 
+                // ✅ التحقق من الرقم المستهدف
                 if (currentNumbers[0] == 1 || currentNumbers[0] == 2 || currentNumbers[0] == 3)
                 {
                     RunOnUiThread(() => {
@@ -228,6 +240,9 @@ public class MainActivity : Activity
                         Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
                         SendBroadcast(colorIntent);
                     });
+                    
+                    // ✅ إيقاف الخلط
+                    isShuffling = false;
                     
                     Intent foundIntent = new Intent("FOUND_TARGET");
                     foundIntent.PutExtra("number", currentNumbers[0]);
@@ -241,7 +256,11 @@ public class MainActivity : Activity
                     
                     PerformTapOnCenter();
                     
+                    // ✅ انتظار ثانية ثم إعادة تعيين حالة الخلط
                     await System.Threading.Tasks.Task.Delay(1000);
+                    
+                    // ✅ إعادة تعيين حالة الخلط إلى false
+                    isShuffling = false;
                 }
                 
                 await System.Threading.Tasks.Task.Delay(100, token);
@@ -249,6 +268,7 @@ public class MainActivity : Activity
         }
         catch (System.Threading.Tasks.TaskCanceledException)
         {
+            // ✅ تم الإلغاء - إعادة الأرقام الأصلية
             currentNumbers = new List<int>(originalNumbers);
             RunOnUiThread(() => {
                 textView.Text = FormatNumbers(currentNumbers);
@@ -261,6 +281,11 @@ public class MainActivity : Activity
                 Toast.MakeText(this, "❌ خطأ: " + ex.Message, ToastLength.Long).Show();
             });
             Android.Util.Log.Error("MainActivity", "Shuffling Error: " + ex.Message);
+        }
+        finally
+        {
+            // ✅ التأكد من إيقاف الخلط عند الخروج
+            isShuffling = false;
         }
     }
 
