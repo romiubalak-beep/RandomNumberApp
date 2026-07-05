@@ -34,6 +34,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         base.OnCreate();
         
         CreateNotificationChannel();
+        
+        // ✅ بدء Foreground Service مع نوع الخدمة
         StartForeground(NOTIFICATION_ID, CreateNotification());
         
         Handler handler = new Handler(Looper.MainLooper);
