@@ -19,6 +19,11 @@ public class FloatingButtonService : Service
     private BroadcastReceiver receiver;
     private bool isShuffling = false;
 
+    // ✅ إضافة متغيرات للسحب
+    private int initialX, initialY;
+    private float initialTouchX, initialTouchY;
+    private bool isDragging = false;
+
     public override IBinder OnBind(Intent intent)
     {
         return null;
@@ -65,38 +70,45 @@ public class FloatingButtonService : Service
                 }
             }
 
+            // ✅ إنشاء الزر العائم
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
             floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 18);
             floatingButton.SetBackgroundColor(Color.Blue);
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ وظيفة الزر العائم - الحل النهائي
+            // ✅ إضافة حدث الضغط مع التمييز بين الضغط والسحب
             floatingButton.Click += (s, e) => {
-                isShuffling = !isShuffling;
-                
-                if (isShuffling)
+                // ✅ فقط إذا لم يكن سحباً
+                if (!isDragging)
                 {
-                    floatingButton.Text = "⏹";
-                    floatingButton.SetBackgroundColor(Color.Green);
-                    Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+                    isShuffling = !isShuffling;
+                    Console.WriteLine("🔄 تم الضغط على الزر العائم - isShuffling: " + isShuffling);
                     
-                    // ✅ بدء الخلط
-                    Intent startIntent = new Intent("START_SHUFFLING");
-                    SendBroadcast(startIntent);
+                    if (isShuffling)
+                    {
+                        floatingButton.Text = "⏹";
+                        floatingButton.SetBackgroundColor(Color.Green);
+                        Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+                        Intent startIntent = new Intent("START_SHUFFLING");
+                        SendBroadcast(startIntent);
+                    }
+                    else
+                    {
+                        floatingButton.Text = "▶";
+                        floatingButton.SetBackgroundColor(Color.Blue);
+                        Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+                        Intent stopIntent = new Intent("STOP_SHUFFLING");
+                        SendBroadcast(stopIntent);
+                    }
                 }
-                else
-                {
-                    floatingButton.Text = "▶";
-                    floatingButton.SetBackgroundColor(Color.Blue);
-                    Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-                    
-                    // ✅ إيقاف الخلط
-                    Intent stopIntent = new Intent("STOP_SHUFFLING");
-                    SendBroadcast(stopIntent);
-                }
+                isDragging = false; // ✅ إعادة تعيين حالة السحب
             };
             
+            // ✅ إضافة حدث السحب (OnTouch)
+            floatingButton.SetOnTouchListener(new FloatingButtonTouchListener(this));
+            
+            // ✅ وضع الزر في Layout
             LinearLayout container = new LinearLayout(this);
             container.AddView(floatingButton);
             floatingView = container;
@@ -130,12 +142,76 @@ public class FloatingButtonService : Service
             
             windowManager.AddView(floatingView, layoutParams);
             isCreated = true;
-            Toast.MakeText(this, "✅ الزر العائم جاهز", ToastLength.Short).Show();
+            Toast.MakeText(this, "✅ الزر العائم جاهز (اسحب لتحريكه)", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
             Toast.MakeText(this, "❌ خطأ: " + ex.Message, ToastLength.Long).Show();
             Android.Util.Log.Error("FloatingService", "Create Error: " + ex.Message);
+        }
+    }
+
+    // ✅ كلاس مخصص لمعالجة اللمس والسحب
+    private class FloatingButtonTouchListener : Java.Lang.Object, View.IOnTouchListener
+    {
+        private FloatingButtonService service;
+        private WindowManagerLayoutParams layoutParams;
+
+        public FloatingButtonTouchListener(FloatingButtonService service)
+        {
+            this.service = service;
+        }
+
+        public bool OnTouch(View v, MotionEvent e)
+        {
+            // ✅ الحصول على المعلمات الحالية للزر
+            if (layoutParams == null && service.windowManager != null && service.floatingView != null)
+            {
+                try
+                {
+                    layoutParams = (WindowManagerLayoutParams)service.floatingView.LayoutParameters;
+                }
+                catch { return false; }
+            }
+
+            if (layoutParams == null) return false;
+
+            switch (e.Action)
+            {
+                case MotionEventActions.Down:
+                    // ✅ تسجيل موقع البداية
+                    service.initialX = layoutParams.X;
+                    service.initialY = layoutParams.Y;
+                    service.initialTouchX = e.RawX;
+                    service.initialTouchY = e.RawY;
+                    service.isDragging = false;
+                    return true;
+
+                case MotionEventActions.Move:
+                    // ✅ حساب المسافة المقطوعة
+                    float deltaX = e.RawX - service.initialTouchX;
+                    float deltaY = e.RawY - service.initialTouchY;
+                    
+                    // ✅ إذا تحرك أكثر من 10 بكسل، نعتبره سحباً
+                    if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
+                    {
+                        service.isDragging = true;
+                    }
+                    
+                    // ✅ تحديث موقع الزر
+                    if (service.isDragging)
+                    {
+                        layoutParams.X = service.initialX + (int)deltaX;
+                        layoutParams.Y = service.initialY + (int)deltaY;
+                        service.windowManager.UpdateViewLayout(service.floatingView, layoutParams);
+                    }
+                    return true;
+
+                case MotionEventActions.Up:
+                    // ✅ انتهاء اللمس
+                    return true;
+            }
+            return false;
         }
     }
 
