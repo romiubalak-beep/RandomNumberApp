@@ -14,11 +14,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     private IWindowManager windowManager;
     private View floatingView;
     private Button floatingButton;
-    private bool isRed = false;
     private bool isCreated = false;
-    private BroadcastReceiver receiver;
-    private bool isShuffling = false;
-
+    
     // ✅ متغيرات السحب
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
@@ -36,28 +33,14 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         Handler handler = new Handler(Looper.MainLooper);
         handler.PostDelayed(() => {
             CreateFloatingButton();
-        }, 2000);
-        
-        receiver = new FloatingButtonReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.AddAction("CHANGE_FLOATING_BUTTON_COLOR");
-        filter.AddAction("FOUND_TARGET");
-        filter.AddAction("SYNC_BUTTON_STATE");
-        
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
-        {
-            RegisterReceiver(receiver, filter, ReceiverFlags.NotExported);
-        }
-        else
-        {
-            RegisterReceiver(receiver, filter);
-        }
+        }, 1500);
     }
 
     private void CreateFloatingButton()
     {
         try
         {
+            // ✅ التحقق من صلاحية العرض فوق التطبيقات
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
                 if (!Settings.CanDrawOverlays(this))
@@ -73,26 +56,32 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             // ✅ إنشاء الزر العائم
             floatingButton = new Button(this);
             floatingButton.Text = "▶";
-            floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 18);
-            floatingButton.SetBackgroundColor(Color.Blue);
+            floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 20);
+            floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
             floatingButton.SetTextColor(Color.White);
             
-            // ✅ تعيين مستمع اللمس
+            // ✅ جعل الزر دائرياً
+            floatingButton.SetPadding(20, 20, 20, 20);
+            
+            // ✅ تعيين مستمع اللمس (للسحب)
             floatingButton.SetOnTouchListener(this);
             
-            // ✅ إضافة حدث الضغط (يتم تنفيذه بعد التأكد من عدم السحب)
+            // ✅ حدث الضغط
             floatingButton.Click += (s, e) => {
                 if (!isDragging)
                 {
+                    // ✅ تبديل حالة الخلط
                     ToggleShuffling();
                 }
                 isDragging = false;
             };
             
+            // ✅ وضع الزر في Layout
             LinearLayout container = new LinearLayout(this);
             container.AddView(floatingButton);
             floatingView = container;
             
+            // ✅ الحصول على WindowManager
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             
             if (windowManager == null)
@@ -101,6 +90,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return;
             }
 
+            // ✅ تحديد نوع النافذة حسب إصدار Android
             WindowManagerTypes windowType;
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
@@ -111,18 +101,21 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 windowType = WindowManagerTypes.Phone;
             }
             
+            // ✅ إعدادات النافذة العائمة
             var layoutParams = new WindowManagerLayoutParams(
-                140, 140, windowType,
+                180, 180, // حجم الزر
+                windowType,
                 WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
                 Format.Translucent);
             
             layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
-            layoutParams.X = 0;
-            layoutParams.Y = 100;
+            layoutParams.X = 50;
+            layoutParams.Y = 200;
             
+            // ✅ إضافة الزر
             windowManager.AddView(floatingView, layoutParams);
             isCreated = true;
-            Toast.MakeText(this, "✅ الزر العائم جاهز (اسحب لتحريكه)", ToastLength.Short).Show();
+            Toast.MakeText(this, "✅ الزر العائم يعمل فوق التطبيقات", ToastLength.Short).Show();
         }
         catch (Exception ex)
         {
@@ -134,28 +127,33 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     // ✅ دالة تبديل حالة الخلط
     private void ToggleShuffling()
     {
-        isShuffling = !isShuffling;
-        Console.WriteLine("🔄 تم الضغط على الزر العائم - isShuffling: " + isShuffling);
-        
-        if (isShuffling)
+        try
         {
-            floatingButton.Text = "⏹";
-            floatingButton.SetBackgroundColor(Color.Green);
-            Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-            Intent startIntent = new Intent("START_SHUFFLING");
-            SendBroadcast(startIntent);
+            // ✅ التحقق من حالة الزر
+            if (floatingButton.Text == "▶")
+            {
+                floatingButton.Text = "⏹";
+                floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
+                Intent startIntent = new Intent("START_SHUFFLING");
+                SendBroadcast(startIntent);
+                Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
+            }
+            else
+            {
+                floatingButton.Text = "▶";
+                floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
+                Intent stopIntent = new Intent("STOP_SHUFFLING");
+                SendBroadcast(stopIntent);
+                Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            floatingButton.Text = "▶";
-            floatingButton.SetBackgroundColor(Color.Blue);
-            Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-            Intent stopIntent = new Intent("STOP_SHUFFLING");
-            SendBroadcast(stopIntent);
+            Android.Util.Log.Error("FloatingService", "ToggleShuffling Error: " + ex.Message);
         }
     }
 
-    // ✅ تنفيذ واجهة IOnTouchListener
+    // ✅ تنفيذ واجهة IOnTouchListener (للسحب)
     public bool OnTouch(View v, MotionEvent e)
     {
         if (windowManager == null || floatingView == null)
@@ -196,85 +194,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         return false;
     }
 
-    private class FloatingButtonReceiver : BroadcastReceiver
-    {
-        public override void OnReceive(Context context, Intent intent)
-        {
-            var service = (FloatingButtonService)context;
-            
-            if (intent.Action == "CHANGE_FLOATING_BUTTON_COLOR")
-            {
-                service.ChangeButtonColor();
-            }
-            else if (intent.Action == "FOUND_TARGET")
-            {
-                service.OnTargetFound();
-            }
-            else if (intent.Action == "SYNC_BUTTON_STATE")
-            {
-                bool isRunning = intent.GetBooleanExtra("isRunning", false);
-                service.SyncButtonState(isRunning);
-            }
-        }
-    }
-
-    private void SyncButtonState(bool isRunning)
-    {
-        if (floatingButton != null && isCreated)
-        {
-            if (isRunning)
-            {
-                floatingButton.Text = "⏹";
-                floatingButton.SetBackgroundColor(Color.Green);
-                isShuffling = true;
-            }
-            else
-            {
-                floatingButton.Text = "▶";
-                floatingButton.SetBackgroundColor(Color.Blue);
-                isShuffling = false;
-            }
-        }
-    }
-
-    private void OnTargetFound()
-    {
-        if (floatingButton != null && isCreated)
-        {
-            floatingButton.Text = "▶";
-            floatingButton.SetBackgroundColor(Color.Blue);
-            isShuffling = false;
-            Toast.MakeText(this, "✅ تم العثور على الرقم - الخلط متوقف", ToastLength.Short).Show();
-            
-            Intent stopIntent = new Intent("STOP_SHUFFLING");
-            SendBroadcast(stopIntent);
-        }
-    }
-
-    private void ChangeButtonColor()
-    {
-        if (floatingButton != null && isCreated)
-        {
-            try
-            {
-                if (isRed)
-                {
-                    floatingButton.SetBackgroundColor(Color.Blue);
-                    isRed = false;
-                }
-                else
-                {
-                    floatingButton.SetBackgroundColor(Color.Red);
-                    isRed = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Android.Util.Log.Error("FloatingService", "ChangeColor Error: " + ex.Message);
-            }
-        }
-    }
-
     public override void OnDestroy()
     {
         base.OnDestroy();
@@ -290,10 +209,5 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 Android.Util.Log.Error("FloatingService", "RemoveView Error: " + ex.Message);
             }
         }
-        try
-        {
-            UnregisterReceiver(receiver);
-        }
-        catch (Exception) { }
     }
 }
