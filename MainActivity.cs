@@ -83,7 +83,7 @@ public class MainActivity : Activity
     {
         try
         {
-            Intent intent = new Intent(android.provider.Settings.ActionAccessibilitySettings);
+            Intent intent = new Intent(Android.Provider.Settings.ActionAccessibilitySettings);
             StartActivity(intent);
             Toast.MakeText(this, "الرجاء تفعيل خدمة إمكانية الوصول للتطبيق", ToastLength.Long).Show();
         }
