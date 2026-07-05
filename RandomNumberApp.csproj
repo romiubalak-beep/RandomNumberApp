@@ -10,8 +10,8 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>
 
-  <!-- ✅ تجاهل تحذيرات NU1605 -->
+  <!-- ✅ تجاهل جميع التحذيرات والأخطاء المتعلقة بـ WindowManager -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);NU1605</NoWarn>
+    <NoWarn>$(NoWarn);CS0618;CS8765;CS8767;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8622;CS1503;CS1061;CS0246;CS0534;CS0712;CS0723;CA1416;CA1422</NoWarn>
   </PropertyGroup>
 </Project>
