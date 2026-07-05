@@ -8,7 +8,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="FloatBar"
+        android:label="RandomApp"
         android:theme="@android:style/Theme.Light">
         
         <activity
