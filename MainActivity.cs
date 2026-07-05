@@ -13,12 +13,12 @@ using System.Security.Cryptography;
 public class MainActivity : Activity
 {
     private TextView textView;
-    private Button startButton;
-    private bool isRunning = false;
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
     private bool accessibilityChecked = false;
+    private List<int> originalNumbers; // ✅ المصفوفة الأصلية
+    private List<int> currentNumbers;  // ✅ المصفوفة الحالية
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -26,6 +26,14 @@ public class MainActivity : Activity
         
         rng = RandomNumberGenerator.Create();
         cancellationToken = new System.Threading.CancellationTokenSource();
+        
+        // ✅ إنشاء المصفوفة الأصلية (1 إلى 150)
+        originalNumbers = new List<int>();
+        for (int i = 1; i <= 150; i++)
+        {
+            originalNumbers.Add(i);
+        }
+        currentNumbers = new List<int>(originalNumbers);
         
         CheckOverlayPermission();
         
@@ -40,19 +48,33 @@ public class MainActivity : Activity
         layout.SetPadding(50, 50, 50, 50);
         layout.SetGravity(GravityFlags.Center);
         
+        // ✅ عرض الأرقام الأصلية
         textView = new TextView(this);
-        textView.Text = "استخدم الزر العائم للتحكم بالخلط";
-        textView.TextSize = 20;
+        textView.Text = FormatNumbers(originalNumbers);
+        textView.TextSize = 16;
         textView.SetTextColor(Color.Black);
+        textView.SetTextSize(Android.Util.ComplexUnitType.Sp, 14);
         
-        startButton = new Button(this);
-        startButton.Text = "▶ بدء الخلط";
-        startButton.SetTextColor(Color.White);
-        startButton.SetBackgroundColor(Color.Blue);
-        startButton.Click += StartShuffling;
+        // ✅ زر لعرض الأرقام الأصلية (اختياري)
+        Button resetButton = new Button(this);
+        resetButton.Text = "🔄 إظهار الأرقام الأصلية";
+        resetButton.SetTextColor(Color.White);
+        resetButton.SetBackgroundColor(Color.Gray);
+        resetButton.Click += (s, e) => {
+            currentNumbers = new List<int>(originalNumbers);
+            textView.Text = FormatNumbers(currentNumbers);
+            Toast.MakeText(this, "تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
+        };
         
         layout.AddView(textView);
-        layout.AddView(startButton);
+        layout.AddView(resetButton);
+        
+        // ✅ إضافة مسافة بين الزرين
+        LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MatchParent,
+            LinearLayout.LayoutParams.WrapContent);
+        params1.SetMargins(0, 0, 0, 20);
+        textView.LayoutParameters = params1;
         
         SetContentView(layout);
         
@@ -84,6 +106,19 @@ public class MainActivity : Activity
                 Toast.MakeText(this, "خطأ في بدء الخدمة: " + ex.Message, ToastLength.Long).Show();
             }
         }, 2000);
+    }
+
+    private string FormatNumbers(List<int> numbers)
+    {
+        string result = "📊 الأرقام (1-150):\n";
+        int count = 0;
+        foreach (int num in numbers)
+        {
+            result += num.ToString().PadLeft(3) + " ";
+            count++;
+            if (count % 15 == 0) result += "\n";
+        }
+        return result;
     }
 
     private void CheckAccessibilityPermission()
@@ -131,31 +166,17 @@ public class MainActivity : Activity
             var activity = (MainActivity)context;
             if (intent.Action == "START_SHUFFLING")
             {
-                if (!activity.isRunning)
-                {
-                    activity.isRunning = true;
-                    activity.startButton.Text = "⏹ إيقاف الخلط";
-                    activity.startButton.SetBackgroundColor(Color.Red);
-                    activity.cancellationToken = new System.Threading.CancellationTokenSource();
-                    activity.StartFastShuffling(activity.cancellationToken.Token);
-                    
-                    // ✅ مزامنة حالة الزر العائم
-                    activity.SyncFloatingButtonState(true);
-                }
+                activity.cancellationToken = new System.Threading.CancellationTokenSource();
+                activity.StartFastShuffling(activity.cancellationToken.Token);
             }
             else if (intent.Action == "STOP_SHUFFLING")
             {
-                if (activity.isRunning)
-                {
-                    activity.isRunning = false;
-                    activity.startButton.Text = "▶ بدء الخلط";
-                    activity.startButton.SetBackgroundColor(Color.Blue);
-                    activity.cancellationToken.Cancel();
-                    activity.textView.Text = "⏹ تم إيقاف الخلط";
-                    
-                    // ✅ مزامنة حالة الزر العائم
-                    activity.SyncFloatingButtonState(false);
-                }
+                activity.cancellationToken.Cancel();
+                // ✅ عند التوقف، إعادة الأرقام الأصلية
+                activity.currentNumbers = new List<int>(activity.originalNumbers);
+                RunOnUiThread(() => {
+                    activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
+                });
             }
             else if (intent.Action == "PERFORM_TAP")
             {
@@ -163,34 +184,12 @@ public class MainActivity : Activity
             }
             else if (intent.Action == "FOUND_TARGET")
             {
-                if (activity.isRunning)
-                {
-                    activity.isRunning = false;
-                    activity.cancellationToken.Cancel();
-                    activity.startButton.Text = "▶ بدء الخلط";
-                    activity.startButton.SetBackgroundColor(Color.Blue);
-                    
-                    int targetNumber = intent.GetIntExtra("number", 0);
-                    activity.textView.Text = "⏸ تم العثور على الرقم: " + targetNumber + " - الخلط متوقف";
-                    
-                    // ✅ مزامنة حالة الزر العائم
-                    activity.SyncFloatingButtonState(false);
-                }
+                // ✅ عند العثور على الرقم المستهدف، إعادة الأرقام الأصلية
+                activity.currentNumbers = new List<int>(activity.originalNumbers);
+                RunOnUiThread(() => {
+                    activity.textView.Text = activity.FormatNumbers(activity.currentNumbers);
+                });
             }
-        }
-    }
-
-    private void SyncFloatingButtonState(bool isRunning)
-    {
-        try
-        {
-            Intent syncIntent = new Intent("SYNC_BUTTON_STATE");
-            syncIntent.PutExtra("isRunning", isRunning);
-            SendBroadcast(syncIntent);
-        }
-        catch (Exception ex)
-        {
-            Android.Util.Log.Error("MainActivity", "Sync Error: " + ex.Message);
         }
     }
 
@@ -208,87 +207,53 @@ public class MainActivity : Activity
         }
     }
 
-    private void StartShuffling(object sender, EventArgs e)
-    {
-        if (!isRunning)
-        {
-            // ✅ بدء الخلط
-            isRunning = true;
-            startButton.Text = "⏹ إيقاف الخلط";
-            startButton.SetBackgroundColor(Color.Red);
-            cancellationToken = new System.Threading.CancellationTokenSource();
-            StartFastShuffling(cancellationToken.Token);
-            
-            // ✅ مزامنة حالة الزر العائم
-            SyncFloatingButtonState(true);
-        }
-        else
-        {
-            // ✅ إيقاف الخلط
-            isRunning = false;
-            startButton.Text = "▶ بدء الخلط";
-            startButton.SetBackgroundColor(Color.Blue);
-            cancellationToken.Cancel();
-            textView.Text = "⏹ تم إيقاف الخلط";
-            
-            // ✅ مزامنة حالة الزر العائم
-            SyncFloatingButtonState(false);
-        }
-    }
-
     private async void StartFastShuffling(System.Threading.CancellationToken token)
     {
-        List<int> numbers = new List<int>();
-        for (int i = 1; i <= 150; i++) numbers.Add(i);
-        
         try
         {
-            while (isRunning && !token.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
             {
-                int n = numbers.Count;
+                // ✅ خلط الأرقام باستخدام Fisher-Yates
+                int n = currentNumbers.Count;
                 for (int i = n - 1; i > 0; i--)
                 {
                     byte[] bytes = new byte[4];
                     rng.GetBytes(bytes);
                     int j = Math.Abs(BitConverter.ToInt32(bytes, 0) % (i + 1));
-                    int temp = numbers[i];
-                    numbers[i] = numbers[j];
-                    numbers[j] = temp;
+                    int temp = currentNumbers[i];
+                    currentNumbers[i] = currentNumbers[j];
+                    currentNumbers[j] = temp;
                 }
                 
-                string result = "🔄 الخلط:\n";
-                for (int i = 0; i < Math.Min(10, numbers.Count); i++)
-                {
-                    result += numbers[i] + " ";
-                }
-                textView.Text = result;
+                // ✅ تحديث واجهة المستخدم
+                RunOnUiThread(() => {
+                    textView.Text = FormatNumbers(currentNumbers);
+                });
                 
-                if (numbers[0] == 1 || numbers[0] == 2 || numbers[0] == 3)
+                // ✅ التحقق من الرقم المستهدف
+                if (currentNumbers[0] == 1 || currentNumbers[0] == 2 || currentNumbers[0] == 3)
                 {
                     RunOnUiThread(() => {
-                        Toast.MakeText(this, "🎯 تم العثور على الرقم: " + numbers[0], ToastLength.Short).Show();
+                        Toast.MakeText(this, "🎯 تم العثور على الرقم: " + currentNumbers[0], ToastLength.Short).Show();
                         Intent colorIntent = new Intent("CHANGE_FLOATING_BUTTON_COLOR");
                         SendBroadcast(colorIntent);
                     });
                     
-                    // ✅ إيقاف الخلط عند العثور على الرقم المستهدف
-                    isRunning = false;
-                    
+                    // ✅ إيقاف الخلط وإعادة الأرقام الأصلية
                     Intent foundIntent = new Intent("FOUND_TARGET");
-                    foundIntent.PutExtra("number", numbers[0]);
+                    foundIntent.PutExtra("number", currentNumbers[0]);
                     SendBroadcast(foundIntent);
                     
+                    // ✅ إعادة الأرقام الأصلية فوراً
+                    currentNumbers = new List<int>(originalNumbers);
                     RunOnUiThread(() => {
-                        startButton.Text = "▶ بدء الخلط";
-                        startButton.SetBackgroundColor(Color.Blue);
-                        textView.Text = "⏸ توقف: تم العثور على " + numbers[0] + " - الخلط متوقف";
+                        textView.Text = FormatNumbers(currentNumbers);
+                        Toast.MakeText(this, "✅ تم إعادة الأرقام الأصلية", ToastLength.Short).Show();
                     });
-                    
-                    // ✅ مزامنة حالة الزر العائم
-                    SyncFloatingButtonState(false);
                     
                     PerformTapOnCenter();
                     
+                    // ✅ انتظار ثانية قبل السماح بالخلط مرة أخرى
                     await System.Threading.Tasks.Task.Delay(1000);
                 }
                 
@@ -297,7 +262,12 @@ public class MainActivity : Activity
         }
         catch (System.Threading.Tasks.TaskCanceledException)
         {
-            // تم الإلغاء بشكل طبيعي
+            // ✅ تم الإلغاء - إعادة الأرقام الأصلية
+            currentNumbers = new List<int>(originalNumbers);
+            RunOnUiThread(() => {
+                textView.Text = FormatNumbers(currentNumbers);
+                Toast.MakeText(this, "⏹ تم إيقاف الخلط - إعادة الأرقام الأصلية", ToastLength.Short).Show();
+            });
         }
         catch (Exception ex)
         {
@@ -305,15 +275,6 @@ public class MainActivity : Activity
                 Toast.MakeText(this, "❌ خطأ: " + ex.Message, ToastLength.Long).Show();
             });
             Android.Util.Log.Error("MainActivity", "Shuffling Error: " + ex.Message);
-        }
-        finally
-        {
-            if (!isRunning)
-            {
-                RunOnUiThread(() => {
-                    textView.Text = "⏹ تم إيقاف الخلط";
-                });
-            }
         }
     }
 
