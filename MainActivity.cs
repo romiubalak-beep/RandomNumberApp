@@ -3,11 +3,11 @@ using Android.Widget;
 using Android.OS;
 using Android.Views;
 using Android.Graphics;
-using System.Security.Cryptography;
 using System;
 using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
+using System.Security.Cryptography;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -18,7 +18,6 @@ public class MainActivity : Activity
     private RandomNumberGenerator rng;
     private System.Threading.CancellationTokenSource cancellationToken;
     private BroadcastReceiver shuffleReceiver;
-    private TapAccessibilityService tapService;
 
     protected override void OnCreate(Bundle savedInstanceState)
     {
@@ -121,8 +120,6 @@ public class MainActivity : Activity
             }
             else if (intent.Action == "PERFORM_TAP")
             {
-                int x = intent.GetIntExtra("x", 0);
-                int y = intent.GetIntExtra("y", 0);
                 activity.PerformTapOnCenter();
             }
         }
