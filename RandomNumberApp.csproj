@@ -11,6 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SuaveControls.FloatingActionButton" Version="2.0.0" />
+    <!-- ✅ استخدام مكتبة AndroidX المتوافقة مع .NET 10 -->
+    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.6.1.2" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.9.0.2" />
   </ItemGroup>
 </Project>
