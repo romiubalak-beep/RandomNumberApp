@@ -26,7 +26,7 @@
             android:exported="false"
             android:stopWithTask="true" />
             
-        <!-- ✅ خدمة إمكانية الوصول (مثل Klick'r) -->
+        <!-- ✅ خدمة إمكانية الوصول -->
         <service
             android:name=".TapAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
