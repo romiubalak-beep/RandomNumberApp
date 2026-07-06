@@ -46,12 +46,17 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return;
             }
 
-            floatingButton = new Button(this);
-            floatingButton.Text = "▶";
-            floatingButton.SetTextSize(Android.Util.ComplexUnitType.Sp, 20);
-            floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
-            floatingButton.SetTextColor(Color.White);
-            floatingButton.SetPadding(20, 20, 20, 20);
+            // ✅ استخدام ملف XML للزر العائم
+            var inflater = LayoutInflater.From(this);
+            floatingView = inflater.Inflate(Resource.Layout.floating_layout, null);
+            
+            floatingButton = floatingView.FindViewById<Button>(Resource.Id.floatingButton);
+            if (floatingButton == null)
+            {
+                Toast.MakeText(this, "فشل في إنشاء الزر العائم", ToastLength.Long).Show();
+                return;
+            }
+            
             floatingButton.SetOnTouchListener(this);
             
             floatingButton.Click += (s, e) => {
@@ -61,10 +66,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 }
                 isDragging = false;
             };
-            
-            LinearLayout container = new LinearLayout(this);
-            container.AddView(floatingButton);
-            floatingView = container;
             
             windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
             if (windowManager == null)
@@ -84,7 +85,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             }
 
             var layoutParams = new WindowManagerLayoutParams(
-                180, 180,
+                ViewGroup.LayoutParams.WrapContent,
+                ViewGroup.LayoutParams.WrapContent,
                 windowType,
                 WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
                 Format.Translucent);
