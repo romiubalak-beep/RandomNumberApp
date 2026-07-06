@@ -7,6 +7,7 @@ using Android.Content;
 using Android.Provider;
 using Android.Runtime;
 using System;
+using static com.example.randomapp.Resource; // ✅ إضافة this
 
 [Service]
 public class FloatingButtonService : Service, View.IOnTouchListener
