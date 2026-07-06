@@ -46,9 +46,10 @@ public class FloatingButtonService : Service, View.IOnTouchListener
 
             var inflater = LayoutInflater.From(this);
 
-            floatingView = inflater.Inflate(
-                Resource.Layout.floating_layout,
-                null);
+            floatingView =
+                inflater.Inflate(
+                    Resource.Layout.floating_layout,
+                    null);
 
             floatingButton =
                 floatingView.FindViewById<Button>(
@@ -101,9 +102,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    // بقية الملف كما هو بدون تغيير
-}
-
     private void ToggleShuffle()
     {
         if (floatingButton == null)
@@ -129,7 +127,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             return false;
 
         var lp =
-            (WindowManagerLayoutParams)floatingView.LayoutParameters!;
+            (WindowManagerLayoutParams)
+            floatingView.LayoutParameters!;
 
         switch (e.Action)
         {
@@ -150,8 +149,8 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 float dx = e.RawX - initialTouchX;
                 float dy = e.RawY - initialTouchY;
 
-                if (System.Math.Abs(dx) > 10 ||
-                    System.Math.Abs(dy) > 10)
+                if (Math.Abs(dx) > 10 ||
+                    Math.Abs(dy) > 10)
                 {
                     isDragging = true;
                 }
