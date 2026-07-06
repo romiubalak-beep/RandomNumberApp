@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
 using System.Security.Cryptography;
-using static com.example.randomapp.Resource; // ✅ إضافة this
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -30,11 +29,13 @@ public class MainActivity : Activity
         
         try
         {
+            // ✅ استخدام Resource مباشرة
             SetContentView(Resource.Layout.activity_main);
         }
         catch (Exception ex)
         {
             Android.Util.Log.Error("MainActivity", "XML Error: " + ex.Message);
+            // ✅ إنشاء الواجهة برمجياً كاحتياطي
             CreateLayoutProgrammatically();
         }
         
