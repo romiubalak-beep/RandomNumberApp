@@ -73,6 +73,12 @@ public class MainActivity : Activity
         {
             RegisterReceiver(receiver, filter);
         }
+
+        // ✅ إضافة Toast بعد RegisterReceiver
+        Toast.MakeText(
+            this,
+            "Receiver Registered",
+            ToastLength.Long).Show();
     }
 
     private void StartFloatingButtonService()
@@ -132,7 +138,6 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ الدالة المطلوبة مع Toast و Task.Delay(1000)
     private async void StartShuffle(
         System.Threading.CancellationToken token)
     {
