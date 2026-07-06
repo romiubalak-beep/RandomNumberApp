@@ -1,3 +1,5 @@
+namespace RandomNumberApp;
+
 using Android.App;
 using Android.Content;
 using Android.Graphics;
@@ -33,17 +35,12 @@ public class MainActivity : Activity
         rng = RandomNumberGenerator.Create();
 
         for (int i = 1; i <= 150; i++)
-        {
             originalNumbers.Add(i);
-        }
 
         currentNumbers = new List<int>(originalNumbers);
 
-        numbersTextView =
-            FindViewById<TextView>(Resource.Id.numbersTextView);
-
-        resetButton =
-            FindViewById<Button>(Resource.Id.resetButton);
+        numbersTextView = FindViewById<TextView>(Resource.Id.numbersTextView);
+        resetButton = FindViewById<Button>(Resource.Id.resetButton);
 
         UpdateNumbers();
 
@@ -57,7 +54,6 @@ public class MainActivity : Activity
         }
 
         CheckOverlayPermission();
-
         StartFloatingButtonService();
 
         receiver = new ShuffleReceiver(this);
@@ -66,17 +62,11 @@ public class MainActivity : Activity
         filter.AddAction("START_SHUFFLING");
         filter.AddAction("STOP_SHUFFLING");
 
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
-        {
-            RegisterReceiver(
-                receiver,
-                filter,
-                ReceiverFlags.NotExported);
-        }
-        else
-        {
-            RegisterReceiver(receiver, filter);
-        }
+        RegisterReceiver(receiver, filter);
+    }
+
+    // بقية الملف كما هو بدون تغيير
+}
     }
 
     private void StartFloatingButtonService()
