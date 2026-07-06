@@ -105,6 +105,11 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     // ✅ الدالة المطلوبة مع Toast
     private void ToggleShuffle()
     {
+        Toast.MakeText(
+            this,
+            "ToggleShuffle Called",
+            ToastLength.Long).Show();
+
         if (floatingButton == null)
             return;
 
@@ -139,6 +144,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
+    // ✅ الدالة المطلوبة مع PerformClick
     public bool OnTouch(View? v, MotionEvent? e)
     {
         if (windowManager == null ||
@@ -161,7 +167,6 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 initialTouchY = e.RawY;
 
                 isDragging = false;
-
                 return true;
 
             case MotionEventActions.Move:
@@ -173,10 +178,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                     Math.Abs(dy) > 10)
                 {
                     isDragging = true;
-                }
 
-                if (isDragging)
-                {
                     lp.X = initialX + (int)dx;
                     lp.Y = initialY + (int)dy;
 
@@ -188,6 +190,12 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return true;
 
             case MotionEventActions.Up:
+
+                if (!isDragging)
+                {
+                    v?.PerformClick();
+                }
+
                 return true;
         }
 
