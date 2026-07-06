@@ -72,7 +72,7 @@ else
 {
     RegisterReceiver(receiver, filter);
 }
-    
+    }
 
     private void StartFloatingButtonService()
     {
