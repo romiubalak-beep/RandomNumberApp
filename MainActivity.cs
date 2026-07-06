@@ -58,11 +58,21 @@ public class MainActivity : Activity
         receiver = new ShuffleReceiver(this);
 
         var filter = new IntentFilter();
-        filter.AddAction("START_SHUFFLING");
-        filter.AddAction("STOP_SHUFFLING");
+filter.AddAction("START_SHUFFLING");
+filter.AddAction("STOP_SHUFFLING");
 
-        RegisterReceiver(receiver, filter);
-    }
+if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
+{
+    RegisterReceiver(
+        receiver,
+        filter,
+        ReceiverFlags.NotExported);
+}
+else
+{
+    RegisterReceiver(receiver, filter);
+}
+    
 
     private void StartFloatingButtonService()
     {
