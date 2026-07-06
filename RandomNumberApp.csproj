@@ -2,8 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0-android</TargetFramework>
-
     <OutputType>Exe</OutputType>
+
+    <RootNamespace>RandomNumberApp</RootNamespace>
+    <AssemblyName>RandomNumberApp</AssemblyName>
 
     <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
 
@@ -11,7 +13,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
 
     <ApplicationId>com.example.randomapp</ApplicationId>
-
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>
