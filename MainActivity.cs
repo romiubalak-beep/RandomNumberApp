@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Android.Content;
 using Android.Provider;
 using System.Security.Cryptography;
+using static com.example.randomapp.Resource; // ✅ إضافة this
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
