@@ -102,20 +102,40 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
+    // ✅ الدالة المطلوبة مع Toast
     private void ToggleShuffle()
     {
         if (floatingButton == null)
             return;
 
+        Toast.MakeText(
+            this,
+            "Button Pressed",
+            ToastLength.Short).Show();
+
         if (floatingButton.Text == "▶")
         {
             floatingButton.Text = "⏹";
-            SendBroadcast(new Intent("START_SHUFFLING"));
+
+            Toast.MakeText(
+                this,
+                "Sending START_SHUFFLING",
+                ToastLength.Short).Show();
+
+            SendBroadcast(
+                new Intent("START_SHUFFLING"));
         }
         else
         {
             floatingButton.Text = "▶";
-            SendBroadcast(new Intent("STOP_SHUFFLING"));
+
+            Toast.MakeText(
+                this,
+                "Sending STOP_SHUFFLING",
+                ToastLength.Short).Show();
+
+            SendBroadcast(
+                new Intent("STOP_SHUFFLING"));
         }
     }
 
