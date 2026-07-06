@@ -1,3 +1,5 @@
+namespace RandomNumberApp;
+
 using Android.App;
 using Android.Content;
 using Android.Graphics;
@@ -28,7 +30,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     {
         base.OnCreate();
 
-        Handler handler = new Handler(Looper.MainLooper);
+        Handler handler = new Handler(Looper.MainLooper!);
         handler.Post(CreateFloatingButton);
     }
 
@@ -43,9 +45,14 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             }
 
             var inflater = LayoutInflater.From(this);
-            floatingView = inflater.Inflate(Resource.Layout.floating_layout, null);
 
-            floatingButton = floatingView.FindViewById<Button>(Resource.Id.floatingButton);
+            floatingView = inflater.Inflate(
+                Resource.Layout.floating_layout,
+                null);
+
+            floatingButton =
+                floatingView.FindViewById<Button>(
+                    Resource.Id.floatingButton);
 
             if (floatingButton == null)
                 return;
@@ -55,15 +62,14 @@ public class FloatingButtonService : Service, View.IOnTouchListener
             floatingButton.Click += (s, e) =>
             {
                 if (!isDragging)
-                {
                     ToggleShuffle();
-                }
 
                 isDragging = false;
             };
 
             windowManager =
-                GetSystemService(WindowService).JavaCast<IWindowManager>();
+                GetSystemService(WindowService)
+                .JavaCast<IWindowManager>();
 
             WindowManagerTypes type =
                 Build.VERSION.SdkInt >= BuildVersionCodes.O
@@ -77,11 +83,15 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 WindowManagerFlags.NotFocusable,
                 Format.Translucent);
 
-            parameters.Gravity = GravityFlags.Top | GravityFlags.Start;
+            parameters.Gravity =
+                GravityFlags.Top | GravityFlags.Start;
+
             parameters.X = 50;
             parameters.Y = 200;
 
-            windowManager.AddView(floatingView, parameters);
+            windowManager.AddView(
+                floatingView,
+                parameters);
         }
         catch (System.Exception ex)
         {
@@ -90,6 +100,9 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 ex.ToString());
         }
     }
+
+    // بقية الملف كما هو بدون تغيير
+}
 
     private void ToggleShuffle()
     {
