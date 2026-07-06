@@ -58,20 +58,20 @@ public class MainActivity : Activity
         receiver = new ShuffleReceiver(this);
 
         var filter = new IntentFilter();
-filter.AddAction("START_SHUFFLING");
-filter.AddAction("STOP_SHUFFLING");
+        filter.AddAction("START_SHUFFLING");
+        filter.AddAction("STOP_SHUFFLING");
 
-if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
-{
-    RegisterReceiver(
-        receiver,
-        filter,
-        ReceiverFlags.NotExported);
-}
-else
-{
-    RegisterReceiver(receiver, filter);
-}
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
+        {
+            RegisterReceiver(
+                receiver,
+                filter,
+                ReceiverFlags.NotExported);
+        }
+        else
+        {
+            RegisterReceiver(receiver, filter);
+        }
     }
 
     private void StartFloatingButtonService()
@@ -219,6 +219,7 @@ else
             this.activity = activity;
         }
 
+        // ✅ الدالة المطلوبة مع Toast
         public override void OnReceive(
             Context? context,
             Intent? intent)
@@ -226,8 +227,18 @@ else
             if (intent == null)
                 return;
 
+            Toast.MakeText(
+                activity,
+                "Received: " + intent.Action,
+                ToastLength.Long).Show();
+
             if (intent.Action == "START_SHUFFLING")
             {
+                Toast.MakeText(
+                    activity,
+                    "START received",
+                    ToastLength.Long).Show();
+
                 if (!activity.isShuffling)
                 {
                     activity.isShuffling = true;
@@ -242,6 +253,11 @@ else
 
             if (intent.Action == "STOP_SHUFFLING")
             {
+                Toast.MakeText(
+                    activity,
+                    "STOP received",
+                    ToastLength.Long).Show();
+
                 activity.isShuffling = false;
 
                 activity.cancellationToken?.Cancel();
