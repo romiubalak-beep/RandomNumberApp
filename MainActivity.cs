@@ -8,6 +8,7 @@ using Android.Widget;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -131,20 +132,28 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
+    // ✅ الدالة المطلوبة مع Toast و Task.Delay(1000)
     private async void StartShuffle(
         System.Threading.CancellationToken token)
     {
+        RunOnUiThread(() =>
+        {
+            Toast.MakeText(
+                this,
+                "StartShuffle ENTERED",
+                ToastLength.Long).Show();
+        });
+
         try
         {
             while (isShuffling &&
                    !token.IsCancellationRequested)
             {
-                // ✅ إضافة Toast للتأكيد
                 RunOnUiThread(() =>
                 {
                     Toast.MakeText(
                         this,
-                        "Shuffling...",
+                        "Loop Running",
                         ToastLength.Short).Show();
                 });
 
@@ -156,10 +165,9 @@ public class MainActivity : Activity
 
                     rng!.GetBytes(bytes);
 
-                    int j =
-                        Math.Abs(
-                            BitConverter.ToInt32(bytes, 0)
-                            % (i + 1));
+                    int j = Math.Abs(
+                        BitConverter.ToInt32(bytes, 0)
+                        % (i + 1));
 
                     (currentNumbers[i],
                      currentNumbers[j]) =
@@ -169,39 +177,18 @@ public class MainActivity : Activity
 
                 RunOnUiThread(UpdateNumbers);
 
-                if (currentNumbers[0] == 1 ||
-                    currentNumbers[0] == 2 ||
-                    currentNumbers[0] == 3)
-                {
-                    RunOnUiThread(() =>
-                    {
-                        Toast.MakeText(
-                            this,
-                            $"تم العثور على الرقم {currentNumbers[0]}",
-                            ToastLength.Long).Show();
-                    });
-
-                    isShuffling = false;
-
-                    currentNumbers =
-                        new List<int>(originalNumbers);
-
-                    RunOnUiThread(UpdateNumbers);
-
-                    break;
-                }
-
-                await System.Threading.Tasks.Task.Delay(
-                    100,
-                    token);
+                await Task.Delay(1000);
             }
         }
-        catch
+        catch (Exception ex)
         {
-        }
-        finally
-        {
-            isShuffling = false;
+            RunOnUiThread(() =>
+            {
+                Toast.MakeText(
+                    this,
+                    ex.ToString(),
+                    ToastLength.Long).Show();
+            });
         }
     }
 
@@ -228,7 +215,6 @@ public class MainActivity : Activity
             this.activity = activity;
         }
 
-        // ✅ الدالة المطلوبة مع Toast
         public override void OnReceive(
             Context? context,
             Intent? intent)
