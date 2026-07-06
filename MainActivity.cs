@@ -67,7 +67,6 @@ public class MainActivity : Activity
 
     // بقية الملف كما هو بدون تغيير
 }
-    }
 
     private void StartFloatingButtonService()
     {
