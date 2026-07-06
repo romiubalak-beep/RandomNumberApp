@@ -18,5 +18,6 @@
   <!-- ✅ إضافة ملفات الموارد -->
   <ItemGroup>
     <AndroidResource Include="Resources\layout\activity_main.xml" />
+    <AndroidResource Include="Resources\layout\floating_layout.xml" />
   </ItemGroup>
 </Project>
