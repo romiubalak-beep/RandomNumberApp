@@ -2,7 +2,6 @@ namespace RandomNumberApp;
 
 using Android.App;
 using Android.Content;
-using Android.Graphics;
 using Android.OS;
 using Android.Provider;
 using Android.Widget;
@@ -65,9 +64,6 @@ public class MainActivity : Activity
         RegisterReceiver(receiver, filter);
     }
 
-    // بقية الملف كما هو بدون تغيير
-}
-
     private void StartFloatingButtonService()
     {
         try
@@ -105,19 +101,15 @@ public class MainActivity : Activity
     private string FormatNumbers(List<int> numbers)
     {
         string result = "";
-
         int count = 0;
 
         foreach (var n in numbers)
         {
             result += n.ToString().PadLeft(3) + " ";
-
             count++;
 
             if (count % 15 == 0)
-            {
                 result += "\n";
-            }
         }
 
         return result;
@@ -126,10 +118,7 @@ public class MainActivity : Activity
     private void UpdateNumbers()
     {
         if (numbersTextView != null)
-        {
-            numbersTextView.Text =
-                FormatNumbers(currentNumbers);
-        }
+            numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
     private async void StartShuffle(
@@ -150,15 +139,13 @@ public class MainActivity : Activity
 
                     int j =
                         Math.Abs(
-                            BitConverter.ToInt32(
-                                bytes,
-                                0)
+                            BitConverter.ToInt32(bytes, 0)
                             % (i + 1));
 
                     (currentNumbers[i],
                      currentNumbers[j]) =
-                     (currentNumbers[j],
-                      currentNumbers[i]);
+                    (currentNumbers[j],
+                     currentNumbers[i]);
                 }
 
                 RunOnUiThread(UpdateNumbers);
@@ -171,8 +158,7 @@ public class MainActivity : Activity
                     {
                         Toast.MakeText(
                             this,
-                            "تم العثور على الرقم " +
-                            currentNumbers[0],
+                            $"تم العثور على الرقم {currentNumbers[0]}",
                             ToastLength.Long).Show();
                     });
 
@@ -207,9 +193,7 @@ public class MainActivity : Activity
         try
         {
             if (receiver != null)
-            {
                 UnregisterReceiver(receiver);
-            }
         }
         catch
         {
@@ -239,8 +223,7 @@ public class MainActivity : Activity
                     activity.isShuffling = true;
 
                     activity.cancellationToken =
-                        new System.Threading
-                        .CancellationTokenSource();
+                        new System.Threading.CancellationTokenSource();
 
                     activity.StartShuffle(
                         activity.cancellationToken.Token);
@@ -254,8 +237,7 @@ public class MainActivity : Activity
                 activity.cancellationToken?.Cancel();
 
                 activity.currentNumbers =
-                    new List<int>(
-                        activity.originalNumbers);
+                    new List<int>(activity.originalNumbers);
 
                 activity.RunOnUiThread(
                     activity.UpdateNumbers);
