@@ -139,6 +139,15 @@ public class MainActivity : Activity
             while (isShuffling &&
                    !token.IsCancellationRequested)
             {
+                // ✅ إضافة Toast للتأكيد
+                RunOnUiThread(() =>
+                {
+                    Toast.MakeText(
+                        this,
+                        "Shuffling...",
+                        ToastLength.Short).Show();
+                });
+
                 int n = currentNumbers.Count;
 
                 for (int i = n - 1; i > 0; i--)
