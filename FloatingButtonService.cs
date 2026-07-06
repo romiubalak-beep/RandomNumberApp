@@ -7,7 +7,6 @@ using Android.Content;
 using Android.Provider;
 using Android.Runtime;
 using System;
-using static com.example.randomapp.Resource; // ✅ إضافة this
 
 [Service]
 public class FloatingButtonService : Service, View.IOnTouchListener
@@ -47,7 +46,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return;
             }
 
-            // ✅ استخدام XML للزر العائم
+            // ✅ استخدام XML للزر العائم مع Resource مباشرة
             var inflater = LayoutInflater.From(this);
             floatingView = inflater.Inflate(Resource.Layout.floating_layout, null);
             
