@@ -46,7 +46,7 @@ public class FloatingButtonService : Service, View.IOnTouchListener
                 return;
             }
 
-            // ✅ استخدام ملف XML للزر العائم
+            // ✅ استخدام XML للزر العائم
             var inflater = LayoutInflater.From(this);
             floatingView = inflater.Inflate(Resource.Layout.floating_layout, null);
             
