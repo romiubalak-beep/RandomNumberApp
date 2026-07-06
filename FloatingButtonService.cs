@@ -1,26 +1,25 @@
 using Android.App;
-using Android.Widget;
-using Android.OS;
-using Android.Views;
-using Android.Graphics;
 using Android.Content;
-using Android.Provider;
+using Android.Graphics;
+using Android.OS;
 using Android.Runtime;
-using System;
+using Android.Views;
+using Android.Widget;
 
 [Service]
 public class FloatingButtonService : Service, View.IOnTouchListener
 {
-    private IWindowManager windowManager;
-    private View floatingView;
-    private Button floatingButton;
-    private bool isCreated = false;
-    
-    private int initialX, initialY;
-    private float initialTouchX, initialTouchY;
-    private bool isDragging = false;
+    private IWindowManager? windowManager;
+    private View? floatingView;
+    private Button? floatingButton;
 
-    public override IBinder OnBind(Intent intent)
+    private int initialX;
+    private int initialY;
+    private float initialTouchX;
+    private float initialTouchY;
+    private bool isDragging;
+
+    public override IBinder? OnBind(Intent intent)
     {
         return null;
     }
@@ -28,165 +27,154 @@ public class FloatingButtonService : Service, View.IOnTouchListener
     public override void OnCreate()
     {
         base.OnCreate();
-        
+
         Handler handler = new Handler(Looper.MainLooper);
-        handler.PostDelayed(CreateFloatingButton, 1500);
+        handler.Post(CreateFloatingButton);
     }
 
     private void CreateFloatingButton()
     {
         try
         {
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.M && !Android.Provider.Settings.CanDrawOverlays(this))
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M &&
+                !Android.Provider.Settings.CanDrawOverlays(this))
             {
-                Intent intent = new Intent(Android.Provider.Settings.ActionManageOverlayPermission,
-                    Android.Net.Uri.Parse("package:" + PackageName));
-                intent.AddFlags(ActivityFlags.NewTask);
-                StartActivity(intent);
                 return;
             }
 
-            // ✅ استخدام XML للزر العائم مع Resource مباشرة
             var inflater = LayoutInflater.From(this);
             floatingView = inflater.Inflate(Resource.Layout.floating_layout, null);
-            
+
             floatingButton = floatingView.FindViewById<Button>(Resource.Id.floatingButton);
+
             if (floatingButton == null)
-            {
-                Toast.MakeText(this, "فشل في إنشاء الزر العائم", ToastLength.Long).Show();
                 return;
-            }
-            
+
             floatingButton.SetOnTouchListener(this);
-            
-            floatingButton.Click += (s, e) => {
+
+            floatingButton.Click += (s, e) =>
+            {
                 if (!isDragging)
                 {
-                    ToggleShuffling();
+                    ToggleShuffle();
                 }
+
                 isDragging = false;
             };
-            
-            windowManager = GetSystemService(WindowService).JavaCast<IWindowManager>();
-            if (windowManager == null)
-            {
-                Toast.MakeText(this, "فشل في الحصول على WindowManager", ToastLength.Long).Show();
-                return;
-            }
 
-            WindowManagerTypes windowType;
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-            {
-                windowType = WindowManagerTypes.ApplicationOverlay;
-            }
-            else
-            {
-                windowType = WindowManagerTypes.Phone;
-            }
+            windowManager =
+                GetSystemService(WindowService).JavaCast<IWindowManager>();
 
-            var layoutParams = new WindowManagerLayoutParams(
+            WindowManagerTypes type =
+                Build.VERSION.SdkInt >= BuildVersionCodes.O
+                ? WindowManagerTypes.ApplicationOverlay
+                : WindowManagerTypes.Phone;
+
+            var parameters = new WindowManagerLayoutParams(
                 ViewGroup.LayoutParams.WrapContent,
                 ViewGroup.LayoutParams.WrapContent,
-                windowType,
-                WindowManagerFlags.NotFocusable | WindowManagerFlags.Fullscreen,
+                type,
+                WindowManagerFlags.NotFocusable,
                 Format.Translucent);
-            
-            layoutParams.Gravity = GravityFlags.Top | GravityFlags.Right;
-            layoutParams.X = 50;
-            layoutParams.Y = 200;
-            
-            windowManager.AddView(floatingView, layoutParams);
-            isCreated = true;
-            Toast.MakeText(this, "✅ الزر العائم يعمل فوق التطبيقات", ToastLength.Short).Show();
+
+            parameters.Gravity = GravityFlags.Top | GravityFlags.Start;
+            parameters.X = 50;
+            parameters.Y = 200;
+
+            windowManager.AddView(floatingView, parameters);
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
-            Toast.MakeText(this, "❌ خطأ: " + ex.Message, ToastLength.Long).Show();
-            Android.Util.Log.Error("FloatingService", "Create Error: " + ex.Message);
+            Android.Util.Log.Error(
+                "FloatingButtonService",
+                ex.ToString());
         }
     }
 
-    private void ToggleShuffling()
+    private void ToggleShuffle()
     {
-        try
+        if (floatingButton == null)
+            return;
+
+        if (floatingButton.Text == "▶")
         {
-            if (floatingButton.Text == "▶")
-            {
-                floatingButton.Text = "⏹";
-                floatingButton.SetBackgroundColor(Color.ParseColor("#4CAF50"));
-                SendBroadcast(new Intent("START_SHUFFLING"));
-                Toast.MakeText(this, "▶ بدء الخلط", ToastLength.Short).Show();
-                
-                Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
-                StartService(tapServiceIntent);
-            }
-            else
-            {
-                floatingButton.Text = "▶";
-                floatingButton.SetBackgroundColor(Color.ParseColor("#2196F3"));
-                SendBroadcast(new Intent("STOP_SHUFFLING"));
-                Toast.MakeText(this, "⏹ إيقاف الخلط", ToastLength.Short).Show();
-                
-                Intent tapServiceIntent = new Intent(this, typeof(TapAccessibilityService));
-                StopService(tapServiceIntent);
-            }
+            floatingButton.Text = "⏹";
+            SendBroadcast(new Intent("START_SHUFFLING"));
         }
-        catch (Exception ex)
+        else
         {
-            Android.Util.Log.Error("FloatingService", "ToggleShuffling Error: " + ex.Message);
+            floatingButton.Text = "▶";
+            SendBroadcast(new Intent("STOP_SHUFFLING"));
         }
     }
 
-    public bool OnTouch(View v, MotionEvent e)
+    public bool OnTouch(View? v, MotionEvent? e)
     {
-        if (windowManager == null || floatingView == null)
+        if (windowManager == null ||
+            floatingView == null ||
+            e == null)
             return false;
 
-        var layoutParams = (WindowManagerLayoutParams)floatingView.LayoutParameters;
+        var lp =
+            (WindowManagerLayoutParams)floatingView.LayoutParameters!;
+
         switch (e.Action)
         {
             case MotionEventActions.Down:
-                initialX = layoutParams.X;
-                initialY = layoutParams.Y;
+
+                initialX = lp.X;
+                initialY = lp.Y;
+
                 initialTouchX = e.RawX;
                 initialTouchY = e.RawY;
+
                 isDragging = false;
+
                 return true;
 
             case MotionEventActions.Move:
-                float deltaX = e.RawX - initialTouchX;
-                float deltaY = e.RawY - initialTouchY;
-                if (Math.Abs(deltaX) > 10 || Math.Abs(deltaY) > 10)
+
+                float dx = e.RawX - initialTouchX;
+                float dy = e.RawY - initialTouchY;
+
+                if (System.Math.Abs(dx) > 10 ||
+                    System.Math.Abs(dy) > 10)
                 {
                     isDragging = true;
                 }
+
                 if (isDragging)
                 {
-                    layoutParams.X = initialX + (int)deltaX;
-                    layoutParams.Y = initialY + (int)deltaY;
-                    windowManager.UpdateViewLayout(floatingView, layoutParams);
+                    lp.X = initialX + (int)dx;
+                    lp.Y = initialY + (int)dy;
+
+                    windowManager.UpdateViewLayout(
+                        floatingView,
+                        lp);
                 }
+
                 return true;
 
             case MotionEventActions.Up:
                 return true;
         }
+
         return false;
     }
 
     public override void OnDestroy()
     {
         base.OnDestroy();
-        if (floatingView != null && windowManager != null && isCreated)
+
+        if (floatingView != null &&
+            windowManager != null)
         {
             try
             {
                 windowManager.RemoveView(floatingView);
-                isCreated = false;
             }
-            catch (Exception ex)
+            catch
             {
-                Android.Util.Log.Error("FloatingService", "RemoveView Error: " + ex.Message);
             }
         }
     }
