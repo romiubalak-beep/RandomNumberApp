@@ -27,8 +27,8 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         
-        // ✅ إنشاء الواجهة برمجياً (بدون XML)
-        CreateLayoutProgrammatically();
+        // ✅ استخدام ملف XML
+        SetContentView(Resource.Layout.activity_main);
         
         try
         {
@@ -41,6 +41,11 @@ public class MainActivity : Activity
                 originalNumbers.Add(i);
             }
             currentNumbers = new List<int>(originalNumbers);
+            
+            // ✅ ربط العناصر من XML
+            numbersTextView = FindViewById<TextView>(Resource.Id.numbersTextView);
+            titleTextView = FindViewById<TextView>(Resource.Id.titleTextView);
+            resetButton = FindViewById<Button>(Resource.Id.resetButton);
             
             // ✅ عرض الأرقام
             if (numbersTextView != null)
@@ -89,50 +94,6 @@ public class MainActivity : Activity
             Toast.MakeText(this, "خطأ في التهيئة: " + ex.Message, ToastLength.Long).Show();
             Android.Util.Log.Error("MainActivity", "OnCreate Error: " + ex.Message);
         }
-    }
-
-    // ✅ إنشاء الواجهة برمجياً
-    private void CreateLayoutProgrammatically()
-    {
-        LinearLayout mainLayout = new LinearLayout(this);
-        mainLayout.Orientation = Orientation.Vertical;
-        mainLayout.SetPadding(50, 50, 50, 50);
-        mainLayout.SetGravity(GravityFlags.Center);
-        
-        titleTextView = new TextView(this);
-        titleTextView.Text = "📊 الأرقام (1-150):";
-        titleTextView.TextSize = 18;
-        titleTextView.SetTextColor(Color.Black);
-        titleTextView.Gravity = GravityFlags.Center;
-        
-        numbersTextView = new TextView(this);
-        numbersTextView.Text = "";
-        numbersTextView.TextSize = 12;
-        numbersTextView.SetTextColor(Color.Black);
-        numbersTextView.Gravity = GravityFlags.Center;
-        
-        resetButton = new Button(this);
-        resetButton.Text = "🔄 إظهار الأرقام الأصلية";
-        resetButton.SetTextColor(Color.White);
-        resetButton.SetBackgroundColor(Color.Gray);
-        
-        LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MatchParent,
-            LinearLayout.LayoutParams.WrapContent);
-        params1.SetMargins(0, 0, 0, 20);
-        numbersTextView.LayoutParameters = params1;
-        
-        LinearLayout.LayoutParams params2 = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MatchParent,
-            LinearLayout.LayoutParams.WrapContent);
-        params2.SetMargins(0, 0, 0, 20);
-        titleTextView.LayoutParameters = params2;
-        
-        mainLayout.AddView(titleTextView);
-        mainLayout.AddView(numbersTextView);
-        mainLayout.AddView(resetButton);
-        
-        SetContentView(mainLayout);
     }
 
     private void StartFloatingButtonService()
