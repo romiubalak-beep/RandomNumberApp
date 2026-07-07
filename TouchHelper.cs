@@ -1,5 +1,4 @@
 using Android.AccessibilityServices;
-using Android.Graphics;
 using Android.OS;
 
 namespace RandomNumberApp;
@@ -13,7 +12,7 @@ public static class TouchHelper
         if (service == null)
             return;
 
-        var path = new Path();
+        var path = new Android.Graphics.Path();
 
         path.MoveTo(540, 1200);
 
@@ -25,9 +24,14 @@ public static class TouchHelper
         var builder = new GestureDescription.Builder();
         builder.AddStroke(stroke);
 
-        service.DispatchGesture(
-            builder.Build(),
-            null,
-            null);
+        var gesture = builder.Build();
+
+        if (gesture != null)
+        {
+            service.DispatchGesture(
+                gesture,
+                null,
+                (Handler?)null);
+        }
     }
 }
