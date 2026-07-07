@@ -8,15 +8,12 @@ using Android.Widget;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
 {
     private TextView? numbersTextView;
     private Button? resetButton;
-
-    private RandomNumberGenerator? rng;
 
     private List<int> originalNumbers = new();
     private List<int> currentNumbers = new();
@@ -31,8 +28,6 @@ public class MainActivity : Activity
         base.OnCreate(savedInstanceState);
 
         SetContentView(Resource.Layout.activity_main);
-
-        rng = RandomNumberGenerator.Create();
 
         for (int i = 1; i <= 150; i++)
             originalNumbers.Add(i);
@@ -73,12 +68,6 @@ public class MainActivity : Activity
         {
             RegisterReceiver(receiver, filter);
         }
-
-        // ✅ إضافة Toast بعد RegisterReceiver
-        Toast.MakeText(
-            this,
-            "Receiver Registered",
-            ToastLength.Long).Show();
     }
 
     private void StartFloatingButtonService()
@@ -138,41 +127,23 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
+    // ✅ النسخة الأسرع مع RandomNumberGenerator.GetInt32()
     private async void StartShuffle(
         System.Threading.CancellationToken token)
     {
-        RunOnUiThread(() =>
-        {
-            Toast.MakeText(
-                this,
-                "StartShuffle ENTERED",
-                ToastLength.Long).Show();
-        });
-
         try
         {
+            int refreshCounter = 0;
+
             while (isShuffling &&
                    !token.IsCancellationRequested)
             {
-                RunOnUiThread(() =>
-                {
-                    Toast.MakeText(
-                        this,
-                        "Loop Running",
-                        ToastLength.Short).Show();
-                });
-
                 int n = currentNumbers.Count;
 
                 for (int i = n - 1; i > 0; i--)
                 {
-                    byte[] bytes = new byte[4];
-
-                    rng!.GetBytes(bytes);
-
-                    int j = Math.Abs(
-                        BitConverter.ToInt32(bytes, 0)
-                        % (i + 1));
+                    int j =
+                        RandomNumberGenerator.GetInt32(i + 1);
 
                     (currentNumbers[i],
                      currentNumbers[j]) =
@@ -180,20 +151,44 @@ public class MainActivity : Activity
                      currentNumbers[i]);
                 }
 
-                RunOnUiThread(UpdateNumbers);
+                refreshCounter++;
 
-                await Task.Delay(1000);
+                if (refreshCounter >= 50)
+                {
+                    refreshCounter = 0;
+                    RunOnUiThread(UpdateNumbers);
+                }
+
+                if (currentNumbers[0] == 1 ||
+                    currentNumbers[0] == 2 ||
+                    currentNumbers[0] == 3)
+                {
+                    int foundNumber = currentNumbers[0];
+
+                    isShuffling = false;
+
+                    RunOnUiThread(() =>
+                    {
+                        UpdateNumbers();
+
+                        Toast.MakeText(
+                            this,
+                            $"تم العثور على الرقم {foundNumber}",
+                            ToastLength.Long).Show();
+                    });
+
+                    break;
+                }
+
+                await Task.Yield();
             }
         }
-        catch (Exception ex)
+        catch
         {
-            RunOnUiThread(() =>
-            {
-                Toast.MakeText(
-                    this,
-                    ex.ToString(),
-                    ToastLength.Long).Show();
-            });
+        }
+        finally
+        {
+            isShuffling = false;
         }
     }
 
@@ -220,6 +215,7 @@ public class MainActivity : Activity
             this.activity = activity;
         }
 
+        // ✅ بدون Toast التجريبية
         public override void OnReceive(
             Context? context,
             Intent? intent)
@@ -227,18 +223,8 @@ public class MainActivity : Activity
             if (intent == null)
                 return;
 
-            Toast.MakeText(
-                activity,
-                "Received: " + intent.Action,
-                ToastLength.Long).Show();
-
             if (intent.Action == "START_SHUFFLING")
             {
-                Toast.MakeText(
-                    activity,
-                    "START received",
-                    ToastLength.Long).Show();
-
                 if (!activity.isShuffling)
                 {
                     activity.isShuffling = true;
@@ -253,11 +239,6 @@ public class MainActivity : Activity
 
             if (intent.Action == "STOP_SHUFFLING")
             {
-                Toast.MakeText(
-                    activity,
-                    "STOP received",
-                    ToastLength.Long).Show();
-
                 activity.isShuffling = false;
 
                 activity.cancellationToken?.Cancel();
