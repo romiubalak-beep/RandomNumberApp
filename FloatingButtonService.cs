@@ -102,14 +102,9 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         }
     }
 
-    // ✅ الدالة المطلوبة مع Toast
+    // ✅ الدالة المطلوبة مع SetPackage
     private void ToggleShuffle()
     {
-        Toast.MakeText(
-            this,
-            "ToggleShuffle Called",
-            ToastLength.Long).Show();
-
         if (floatingButton == null)
             return;
 
@@ -122,29 +117,32 @@ public class FloatingButtonService : Service, View.IOnTouchListener
         {
             floatingButton.Text = "⏹";
 
+            var intent = new Intent("START_SHUFFLING");
+            intent.SetPackage(PackageName);
+
+            SendBroadcast(intent);
+
             Toast.MakeText(
                 this,
-                "Sending START_SHUFFLING",
+                "START sent",
                 ToastLength.Short).Show();
-
-            SendBroadcast(
-                new Intent("START_SHUFFLING"));
         }
         else
         {
             floatingButton.Text = "▶";
 
+            var intent = new Intent("STOP_SHUFFLING");
+            intent.SetPackage(PackageName);
+
+            SendBroadcast(intent);
+
             Toast.MakeText(
                 this,
-                "Sending STOP_SHUFFLING",
+                "STOP sent",
                 ToastLength.Short).Show();
-
-            SendBroadcast(
-                new Intent("STOP_SHUFFLING"));
         }
     }
 
-    // ✅ الدالة المطلوبة مع PerformClick
     public bool OnTouch(View? v, MotionEvent? e)
     {
         if (windowManager == null ||
