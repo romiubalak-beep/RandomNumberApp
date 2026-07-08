@@ -1,5 +1,4 @@
 using Android.AccessibilityServices;
-using Android.Graphics;
 using Android.Views.Accessibility;
 
 namespace RandomNumberApp;
@@ -14,7 +13,12 @@ public class MyAccessibilityService : AccessibilityService
     protected override void OnServiceConnected()
     {
         base.OnServiceConnected();
+
         Instance = this;
+
+        Android.Util.Log.Debug(
+            "ACCESSIBILITY",
+            "Service Connected");
     }
 
     public override void OnAccessibilityEvent(AccessibilityEvent e)
