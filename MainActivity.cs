@@ -127,7 +127,7 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ النسخة الأسرع مع RandomNumberGenerator.GetInt32()
+    // ✅ النسخة الأسرع مع RandomNumberGenerator.GetInt32() و TouchHelper.TapCenter()
     private async void StartShuffle(
         System.Threading.CancellationToken token)
     {
@@ -164,6 +164,9 @@ public class MainActivity : Activity
                     currentNumbers[0] == 3)
                 {
                     int foundNumber = currentNumbers[0];
+
+                    // ✅ إضافة TouchHelper.TapCenter() قبل إيقاف الخلط
+                    TouchHelper.TapCenter();
 
                     isShuffling = false;
 
