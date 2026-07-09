@@ -1,36 +1,83 @@
 using Android.AccessibilityServices;
-using Android.Runtime;
-using Android.Content;
+using Android.OS;
+using Android.Util;
 
 namespace RandomNumberApp;
 
-[Register("com.example.randomapp.MyAccessibilityService")]
-[Service(
-    Permission = "android.permission.BIND_ACCESSIBILITY_SERVICE",
-    Exported = true)]
-[IntentFilter(new[]
+public static class TouchHelper
 {
-    "android.accessibilityservice.AccessibilityService"
-})]
-[MetaData(
-    "android.accessibilityservice",
-    Resource = "@xml/accessibility_service_config")]
-public class MyAccessibilityService : AccessibilityService
-{
-    public static MyAccessibilityService? Instance { get; private set; }
-
-    protected override void OnServiceConnected()
+    public static void TapCenter()
     {
-        base.OnServiceConnected();
-        Instance = this;
+        var service = MyAccessibilityService.Instance;
+
+        if (service == null)
+        {
+            Log.Error(
+                "ACCESSIBILITY",
+                "Service is NULL");
+
+            return;
+        }
+
+        Log.Debug(
+            "ACCESSIBILITY",
+            "TapCenter Called");
+
+        var path = new Android.Graphics.Path();
+
+        // ✅ الحصول على إحداثيات منتصف الشاشة ديناميكياً
+        var wm = service.GetSystemService(
+            Android.Content.Context.WindowService)
+            as Android.Views.IWindowManager;
+
+        var metrics = new Android.Util.DisplayMetrics();
+
+        service.Display?.GetRealMetrics(metrics);
+
+        float x = metrics.WidthPixels / 2f;
+        float y = metrics.HeightPixels / 2f;
+
+        path.MoveTo(x, y);
+
+        var stroke =
+            new GestureDescription.StrokeDescription(
+                path,
+                0,
+                50);
+
+        var builder =
+            new GestureDescription.Builder();
+
+        builder.AddStroke(stroke);
+
+        var gesture = builder.Build();
+
+        bool result = service.DispatchGesture(
+            gesture,
+            new TapCallback(),
+            null);
+
+        Log.Debug("ACCESSIBILITY",
+            $"DispatchGesture={result}");
     }
 
-    public override void OnAccessibilityEvent(
-        Android.Views.Accessibility.AccessibilityEvent? e)
+    private class TapCallback
+        : AccessibilityService.GestureResultCallback
     {
-    }
+        public override void OnCompleted(
+            GestureDescription? gestureDescription)
+        {
+            Log.Debug(
+                "ACCESSIBILITY",
+                "Gesture Completed");
+        }
 
-    public override void OnInterrupt()
-    {
+        public override void OnCancelled(
+            GestureDescription? gestureDescription)
+        {
+            Log.Error(
+                "ACCESSIBILITY",
+                "Gesture Cancelled");
+        }
     }
 }
