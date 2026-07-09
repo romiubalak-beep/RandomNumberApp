@@ -1,6 +1,6 @@
 using Android.AccessibilityServices;
 using Android.Runtime;
-using Android.Views.Accessibility;
+using Android.Content;
 
 namespace RandomNumberApp;
 
@@ -12,6 +12,9 @@ namespace RandomNumberApp;
 {
     "android.accessibilityservice.AccessibilityService"
 })]
+[MetaData(
+    "android.accessibilityservice",
+    Resource = "@xml/accessibility_service_config")]
 public class MyAccessibilityService : AccessibilityService
 {
     public static MyAccessibilityService? Instance { get; private set; }
@@ -22,7 +25,8 @@ public class MyAccessibilityService : AccessibilityService
         Instance = this;
     }
 
-    public override void OnAccessibilityEvent(AccessibilityEvent e)
+    public override void OnAccessibilityEvent(
+        Android.Views.Accessibility.AccessibilityEvent? e)
     {
     }
 
