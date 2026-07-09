@@ -40,14 +40,10 @@ public static class TouchHelper
 
         var gesture = builder.Build();
 
-        // ✅ استبدال السطر بالسطر الجديد مع Log
-        bool result = service.DispatchGesture(
+        service.DispatchGesture(
             gesture,
             new TapCallback(),
             null);
-
-        Log.Debug("ACCESSIBILITY",
-            $"DispatchGesture={result}");
     }
 
     private class TapCallback
