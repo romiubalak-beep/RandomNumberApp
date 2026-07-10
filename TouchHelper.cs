@@ -25,19 +25,8 @@ public static class TouchHelper
 
         var path = new Android.Graphics.Path();
 
-        // ✅ الحصول على إحداثيات منتصف الشاشة ديناميكياً
-        var wm = service.GetSystemService(
-            Android.Content.Context.WindowService)
-            as Android.Views.IWindowManager;
-
-        var metrics = new Android.Util.DisplayMetrics();
-
-        service.Display?.GetRealMetrics(metrics);
-
-        float x = metrics.WidthPixels / 2f;
-        float y = metrics.HeightPixels / 2f;
-
-        path.MoveTo(x, y);
+        // ✅ العودة إلى الإحداثيات الثابتة
+        path.MoveTo(540, 1200);
 
         var stroke =
             new GestureDescription.StrokeDescription(
