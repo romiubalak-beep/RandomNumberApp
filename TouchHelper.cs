@@ -25,8 +25,13 @@ public static class TouchHelper
 
         var path = new Android.Graphics.Path();
 
-        // ✅ العودة إلى الإحداثيات الثابتة
-        path.MoveTo(540, 1200);
+        // ✅ استخدام Resources.System.DisplayMetrics لحساب الإحداثيات
+        var metrics = Android.App.Application.Context.Resources.DisplayMetrics;
+
+        float x = metrics.WidthPixels * 0.5f;   // 50% من العرض
+        float y = metrics.HeightPixels * 0.65f; // 65% من الارتفاع
+
+        path.MoveTo(x, y);
 
         var stroke =
             new GestureDescription.StrokeDescription(
