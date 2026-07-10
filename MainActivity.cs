@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
+using Java.IO;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -236,7 +238,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة حفظ السجل
+    // ✅ دالة حفظ السجل الجديدة باستخدام MediaStore
     private void SaveLog()
     {
         try
@@ -253,22 +255,54 @@ public class MainActivity : Activity
             foreach (var item in afterTap)
                 lines.Add(item);
 
-            string path =
-                "/storage/emulated/0/Download/shuffle_log.txt";
+            string text =
+                string.Join("\n", lines);
 
-            File.WriteAllLines(path, lines);
+            ContentValues values =
+                new ContentValues();
+
+            values.Put(
+                MediaStore.IMediaColumns.DisplayName,
+                $"shuffle_log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+
+            values.Put(
+                MediaStore.IMediaColumns.MimeType,
+                "text/plain");
+
+            values.Put(
+                MediaStore.IMediaColumns.RelativePath,
+                Environment.DirectoryDownloads);
+
+            var uri =
+                ContentResolver.Insert(
+                    MediaStore.Downloads.ExternalContentUri,
+                    values);
+
+            if (uri != null)
+            {
+                using var stream =
+                    ContentResolver.OpenOutputStream(uri);
+
+                using var writer =
+                    new StreamWriter(stream!);
+
+                writer.Write(text);
+            }
 
             RunOnUiThread(() =>
             {
                 Toast.MakeText(
                     this,
-                    "تم حفظ السجل في Download",
+                    "تم حفظ الملف في Download",
                     ToastLength.Long)
                     .Show();
             });
         }
-        catch
+        catch (Exception ex)
         {
+            Android.Util.Log.Error(
+                "SAVE_FILE",
+                ex.ToString());
         }
     }
 
