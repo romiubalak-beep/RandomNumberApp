@@ -7,6 +7,7 @@ using Android.Provider;
 using Android.Widget;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
@@ -22,6 +23,12 @@ public class MainActivity : Activity
     private System.Threading.CancellationTokenSource? cancellationToken;
 
     private ShuffleReceiver? receiver;
+
+    // ✅ المتغيرات الجديدة للتسجيل
+    private Queue<string> beforeTap = new();
+    private List<string> afterTap = new();
+    private bool targetTriggered = false;
+    private int afterTapCount = 0;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -159,11 +166,45 @@ public class MainActivity : Activity
                     RunOnUiThread(UpdateNumbers);
                 }
 
+                // ✅ التسجيل قبل وبعد العثور على الهدف
+                string currentArray =
+                    string.Join(" ", currentNumbers);
+
+                if (!targetTriggered)
+                {
+                    beforeTap.Enqueue(currentArray);
+
+                    while (beforeTap.Count > 100)
+                        beforeTap.Dequeue();
+                }
+                else
+                {
+                    if (afterTapCount < 100)
+                    {
+                        afterTap.Add(currentArray);
+                        afterTapCount++;
+                    }
+
+                    if (afterTapCount >= 100)
+                    {
+                        SaveLog();
+                        break;
+                    }
+                }
+
                 if (currentNumbers[0] == 1 ||
                     currentNumbers[0] == 2 ||
                     currentNumbers[0] == 3)
                 {
                     int foundNumber = currentNumbers[0];
+
+                    // ✅ تسجيل العثور على الهدف
+                    targetTriggered = true;
+                    afterTapCount = 0;
+                    afterTap.Clear();
+                    afterTap.Add("========== TARGET ==========");
+                    afterTap.Add(currentArray);
+                    afterTap.Add("============================");
 
                     // ✅ إضافة TouchHelper.TapCenter() قبل إيقاف الخلط
                     TouchHelper.TapCenter();
@@ -192,6 +233,42 @@ public class MainActivity : Activity
         finally
         {
             isShuffling = false;
+        }
+    }
+
+    // ✅ دالة حفظ السجل
+    private void SaveLog()
+    {
+        try
+        {
+            var lines = new List<string>();
+
+            lines.Add("===== 100 BEFORE TAP =====");
+
+            foreach (var item in beforeTap)
+                lines.Add(item);
+
+            lines.Add("");
+
+            foreach (var item in afterTap)
+                lines.Add(item);
+
+            string path =
+                "/storage/emulated/0/Download/shuffle_log.txt";
+
+            File.WriteAllLines(path, lines);
+
+            RunOnUiThread(() =>
+            {
+                Toast.MakeText(
+                    this,
+                    "تم حفظ السجل في Download",
+                    ToastLength.Long)
+                    .Show();
+            });
+        }
+        catch
+        {
         }
     }
 
@@ -231,6 +308,10 @@ public class MainActivity : Activity
                 if (!activity.isShuffling)
                 {
                     activity.isShuffling = true;
+                    activity.targetTriggered = false; // ✅ إعادة تعيين عند بدء الخلط
+                    activity.beforeTap.Clear();
+                    activity.afterTap.Clear();
+                    activity.afterTapCount = 0;
 
                     activity.cancellationToken =
                         new System.Threading.CancellationTokenSource();
