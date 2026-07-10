@@ -269,9 +269,10 @@ public class MainActivity : Activity
                 MediaStore.IMediaColumns.MimeType,
                 "text/plain");
 
+            // ✅ استبدال السطر بالنسخة المطلوبة
             values.Put(
                 MediaStore.IMediaColumns.RelativePath,
-                Environment.DirectoryDownloads);
+                Android.OS.Environment.DirectoryDownloads);
 
             var uri =
                 ContentResolver.Insert(
