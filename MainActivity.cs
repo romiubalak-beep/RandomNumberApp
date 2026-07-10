@@ -190,6 +190,11 @@ public class MainActivity : Activity
                     if (afterTapCount >= 100)
                     {
                         SaveLog();
+
+                        isShuffling = false;
+
+                        RunOnUiThread(UpdateNumbers);
+
                         break;
                     }
                 }
@@ -208,22 +213,18 @@ public class MainActivity : Activity
                     afterTap.Add(currentArray);
                     afterTap.Add("============================");
 
-                    // ✅ إضافة TouchHelper.TapCenter() قبل إيقاف الخلط
+                    // ✅ إضافة TouchHelper.TapCenter() مع continue
                     TouchHelper.TapCenter();
-
-                    isShuffling = false;
 
                     RunOnUiThread(() =>
                     {
-                        UpdateNumbers();
-
                         Toast.MakeText(
                             this,
                             $"تم العثور على الرقم {foundNumber}",
-                            ToastLength.Long).Show();
+                            ToastLength.Short).Show();
                     });
 
-                    break;
+                    continue;
                 }
 
                 await Task.Yield();
@@ -269,7 +270,6 @@ public class MainActivity : Activity
                 MediaStore.IMediaColumns.MimeType,
                 "text/plain");
 
-            // ✅ استبدال السطر بالنسخة المطلوبة
             values.Put(
                 MediaStore.IMediaColumns.RelativePath,
                 Android.OS.Environment.DirectoryDownloads);
