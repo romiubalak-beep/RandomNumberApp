@@ -1,3 +1,6 @@
+using System.Text;
+using System.IO; // ✅ إضافة this
+
 namespace RandomNumberApp;
 
 using Android.App;
@@ -127,13 +130,20 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ النسخة الأسرع مع RandomNumberGenerator.GetInt32() و TouchHelper.TapCenter()
+    // ✅ النسخة مع حفظ الملفات
     private async void StartShuffle(
         System.Threading.CancellationToken token)
     {
         try
         {
-            int refreshCounter = 0;
+            string filePath =
+                Path.Combine(
+                    FilesDir!.AbsolutePath,
+                    $"shuffle_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+
+            var sb = new StringBuilder();
+
+            DateTime startTime = DateTime.Now;
 
             while (isShuffling &&
                    !token.IsCancellationRequested)
@@ -151,32 +161,23 @@ public class MainActivity : Activity
                      currentNumbers[i]);
                 }
 
-                refreshCounter++;
+                // حفظ المصفوفة الحالية
+                sb.AppendLine(
+                    string.Join(",", currentNumbers));
 
-                if (refreshCounter >= 50)
+                // بعد ثانيتين احفظ الملف
+                if ((DateTime.Now - startTime)
+                    .TotalSeconds >= 2)
                 {
-                    refreshCounter = 0;
-                    RunOnUiThread(UpdateNumbers);
-                }
-
-                if (currentNumbers[0] == 1 ||
-                    currentNumbers[0] == 2 ||
-                    currentNumbers[0] == 3)
-                {
-                    int foundNumber = currentNumbers[0];
-
-                    // ✅ إضافة TouchHelper.TapCenter() قبل إيقاف الخلط
-                    TouchHelper.TapCenter();
-
-                    isShuffling = false;
+                    File.WriteAllText(
+                        filePath,
+                        sb.ToString());
 
                     RunOnUiThread(() =>
                     {
-                        UpdateNumbers();
-
                         Toast.MakeText(
                             this,
-                            $"تم العثور على الرقم {foundNumber}",
+                            $"تم حفظ الملف\n{filePath}",
                             ToastLength.Long).Show();
                     });
 
@@ -218,7 +219,6 @@ public class MainActivity : Activity
             this.activity = activity;
         }
 
-        // ✅ بدون Toast التجريبية
         public override void OnReceive(
             Context? context,
             Intent? intent)
