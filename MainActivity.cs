@@ -26,12 +26,12 @@ public class MainActivity : Activity
 
     private ShuffleReceiver? receiver;
 
-    // ✅ المتغيرات للتسجيل
-    private Queue<string> beforeTap = new();
-    private List<string> afterTap = new();
+    // ✅ استخدام int[] بدلاً من string للحصول على سرعة أعلى
+    private Queue<int[]> beforeTap = new Queue<int[]>(1000);
+    private List<int[]> afterTap = new List<int[]>(1000);
     private bool targetTriggered = false;
     private int afterTapCount = 0;
-    private const int MAX_LOG_COUNT = 1500;
+    private const int MAX_LOG_COUNT = 1000;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -137,7 +137,7 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ النسخة المطلوبة مع حذف Task.Delay والإيقاف النهائي
+    // ✅ النسخة المحسنة مع int[] بدلاً من string
     private async void StartShuffle(
         System.Threading.CancellationToken token)
     {
@@ -169,9 +169,8 @@ public class MainActivity : Activity
                     RunOnUiThread(UpdateNumbers);
                 }
 
-                // ✅ التسجيل قبل وبعد العثور على الهدف
-                string currentArray =
-                    string.Join(" ", currentNumbers);
+                // ✅ التسجيل قبل وبعد العثور على الهدف باستخدام int[]
+                int[] currentArray = currentNumbers.ToArray();
 
                 if (!targetTriggered)
                 {
@@ -210,11 +209,9 @@ public class MainActivity : Activity
                     targetTriggered = true;
                     afterTapCount = 0;
                     afterTap.Clear();
-                    afterTap.Add("========== TARGET ==========");
-                    afterTap.Add(currentArray);
-                    afterTap.Add("============================");
+                    afterTap.Add(new int[] { -1 }); // علامة TARGET
 
-                    // ✅ تنفيذ النقرة وعرض Toast فقط
+                    // ✅ تنفيذ النقرة وعرض Toast
                     TouchHelper.TapCenter();
 
                     RunOnUiThread(() =>
@@ -224,9 +221,6 @@ public class MainActivity : Activity
                             $"تم العثور على الرقم {foundNumber}",
                             ToastLength.Short).Show();
                     });
-
-                    // ✅ حذف Task.Delay والإيقاف النهائي
-                    // الخلط يستمر
                 }
 
                 await Task.Yield();
@@ -241,7 +235,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة حفظ السجل
+    // ✅ دالة حفظ السجل مع تحويل int[] إلى string
     private void SaveLog()
     {
         try
@@ -250,15 +244,35 @@ public class MainActivity : Activity
 
             lines.Add($"===== {MAX_LOG_COUNT} BEFORE TAP =====");
 
-            foreach (var item in beforeTap)
-                lines.Add(item);
+            foreach (var arr in beforeTap)
+            {
+                lines.Add(string.Join(" ", arr));
+            }
 
             lines.Add("");
 
             lines.Add($"===== {MAX_LOG_COUNT} AFTER TAP =====");
 
-            foreach (var item in afterTap)
-                lines.Add(item);
+            bool targetAdded = false;
+
+            foreach (var arr in afterTap)
+            {
+                // ✅ التحقق من علامة TARGET
+                if (arr.Length == 1 && arr[0] == -1)
+                {
+                    lines.Add("========== TARGET ==========");
+                    targetAdded = true;
+                }
+                else
+                {
+                    lines.Add(string.Join(" ", arr));
+                }
+            }
+
+            if (!targetAdded)
+            {
+                lines.Insert(lines.Count - 50, "========== TARGET ==========");
+            }
 
             string text =
                 string.Join("\n", lines);
