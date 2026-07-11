@@ -169,12 +169,10 @@ public class MainActivity : Activity
                     RunOnUiThread(UpdateNumbers);
                 }
 
-                // ✅ التسجيل قبل وبعد العثور على الهدف باستخدام int[]
-                int[] currentArray = currentNumbers.ToArray();
-
+                // ✅ التسجيل قبل وبعد العثور على الهدف
                 if (!targetTriggered)
                 {
-                    beforeTap.Enqueue(currentArray);
+                    beforeTap.Enqueue(currentNumbers.ToArray());
 
                     while (beforeTap.Count > MAX_LOG_COUNT)
                         beforeTap.Dequeue();
@@ -183,7 +181,7 @@ public class MainActivity : Activity
                 {
                     if (afterTapCount < MAX_LOG_COUNT)
                     {
-                        afterTap.Add(currentArray);
+                        afterTap.Add(currentNumbers.ToArray());
                         afterTapCount++;
                     }
 
@@ -199,9 +197,11 @@ public class MainActivity : Activity
                     }
                 }
 
-                if (currentNumbers[0] == 1 ||
-                    currentNumbers[0] == 2 ||
-                    currentNumbers[0] == 3)
+                // ✅ الشرط المدمج: targetTriggered والرقم المستهدف معاً
+                if (!targetTriggered &&
+                    (currentNumbers[0] == 1 ||
+                     currentNumbers[0] == 2 ||
+                     currentNumbers[0] == 3))
                 {
                     int foundNumber = currentNumbers[0];
 
@@ -253,25 +253,17 @@ public class MainActivity : Activity
 
             lines.Add($"===== {MAX_LOG_COUNT} AFTER TAP =====");
 
-            bool targetAdded = false;
-
             foreach (var arr in afterTap)
             {
                 // ✅ التحقق من علامة TARGET
                 if (arr.Length == 1 && arr[0] == -1)
                 {
                     lines.Add("========== TARGET ==========");
-                    targetAdded = true;
                 }
                 else
                 {
                     lines.Add(string.Join(" ", arr));
                 }
-            }
-
-            if (!targetAdded)
-            {
-                lines.Insert(lines.Count - 50, "========== TARGET ==========");
             }
 
             string text =
