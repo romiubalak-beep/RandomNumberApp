@@ -26,11 +26,12 @@ public class MainActivity : Activity
 
     private ShuffleReceiver? receiver;
 
-    // ✅ المتغيرات الجديدة للتسجيل
+    // ✅ المتغيرات للتسجيل
     private Queue<string> beforeTap = new();
     private List<string> afterTap = new();
     private bool targetTriggered = false;
     private int afterTapCount = 0;
+    private const int MAX_LOG_COUNT = 1500; // ✅ تغيير إلى 1500
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -136,7 +137,7 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ النسخة الأسرع مع RandomNumberGenerator.GetInt32() و TouchHelper.TapCenter()
+    // ✅ النسخة المطلوبة مع 1500 قبل وبعد النقر
     private async void StartShuffle(
         System.Threading.CancellationToken token)
     {
@@ -176,18 +177,18 @@ public class MainActivity : Activity
                 {
                     beforeTap.Enqueue(currentArray);
 
-                    while (beforeTap.Count > 100)
+                    while (beforeTap.Count > MAX_LOG_COUNT)
                         beforeTap.Dequeue();
                 }
                 else
                 {
-                    if (afterTapCount < 100)
+                    if (afterTapCount < MAX_LOG_COUNT)
                     {
                         afterTap.Add(currentArray);
                         afterTapCount++;
                     }
 
-                    if (afterTapCount >= 100)
+                    if (afterTapCount >= MAX_LOG_COUNT)
                     {
                         SaveLog();
 
@@ -213,7 +214,7 @@ public class MainActivity : Activity
                     afterTap.Add(currentArray);
                     afterTap.Add("============================");
 
-                    // ✅ إضافة TouchHelper.TapCenter() مع continue
+                    // ✅ تنفيذ النقرة
                     TouchHelper.TapCenter();
 
                     RunOnUiThread(() =>
@@ -224,7 +225,20 @@ public class MainActivity : Activity
                             ToastLength.Short).Show();
                     });
 
-                    continue;
+                    // ✅ انتظار ثانية واحدة ثم إيقاف الخلط نهائياً
+                    await Task.Delay(1000);
+
+                    isShuffling = false;
+
+                    RunOnUiThread(() =>
+                    {
+                        Toast.MakeText(
+                            this,
+                            "⏹ توقف الخلط نهائياً",
+                            ToastLength.Short).Show();
+                    });
+
+                    break; // ✅ الخروج من الحلقة نهائياً
                 }
 
                 await Task.Yield();
@@ -239,19 +253,21 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة حفظ السجل الجديدة باستخدام MediaStore
+    // ✅ دالة حفظ السجل
     private void SaveLog()
     {
         try
         {
             var lines = new List<string>();
 
-            lines.Add("===== 100 BEFORE TAP =====");
+            lines.Add($"===== {MAX_LOG_COUNT} BEFORE TAP =====");
 
             foreach (var item in beforeTap)
                 lines.Add(item);
 
             lines.Add("");
+
+            lines.Add($"===== {MAX_LOG_COUNT} AFTER TAP =====");
 
             foreach (var item in afterTap)
                 lines.Add(item);
@@ -330,7 +346,6 @@ public class MainActivity : Activity
             this.activity = activity;
         }
 
-        // ✅ بدون Toast التجريبية
         public override void OnReceive(
             Context? context,
             Intent? intent)
@@ -343,7 +358,7 @@ public class MainActivity : Activity
                 if (!activity.isShuffling)
                 {
                     activity.isShuffling = true;
-                    activity.targetTriggered = false; // ✅ إعادة تعيين عند بدء الخلط
+                    activity.targetTriggered = false;
                     activity.beforeTap.Clear();
                     activity.afterTap.Clear();
                     activity.afterTapCount = 0;
