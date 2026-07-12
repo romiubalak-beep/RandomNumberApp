@@ -1,6 +1,7 @@
 using Android.AccessibilityServices;
 using Android.OS;
 using Android.Util;
+using Android.Content;
 
 namespace RandomNumberApp;
 
@@ -25,11 +26,10 @@ public static class TouchHelper
 
         var path = new Android.Graphics.Path();
 
-        // ✅ استخدام Resources.System.DisplayMetrics لحساب الإحداثيات
         var metrics = Android.App.Application.Context.Resources.DisplayMetrics;
 
-        float x = metrics.WidthPixels * 0.5f;   // 50% من العرض
-        float y = metrics.HeightPixels * 0.65f; // 65% من الارتفاع
+        float x = metrics.WidthPixels * 0.5f;
+        float y = metrics.HeightPixels * 0.65f;
 
         path.MoveTo(x, y);
 
@@ -64,6 +64,9 @@ public static class TouchHelper
             Log.Debug(
                 "ACCESSIBILITY",
                 "Gesture Completed");
+
+            var intent = new Intent("TAP_FINISHED");
+            Android.App.Application.Context.SendBroadcast(intent);
         }
 
         public override void OnCancelled(
