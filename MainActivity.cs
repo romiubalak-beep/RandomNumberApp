@@ -26,12 +26,10 @@ public class MainActivity : Activity
 
     private ShuffleReceiver? receiver;
 
-    // ✅ استخدام int[] بدلاً من string للحصول على سرعة أعلى
-    private Queue<int[]> beforeTap = new Queue<int[]>(1000);
-    private List<int[]> afterTap = new List<int[]>(1000);
-    private bool targetTriggered = false;
-    private int afterTapCount = 0;
-    private const int MAX_LOG_COUNT = 1000;
+    // ✅ المتغيرات الجديدة
+    private DateTime shuffleStartTime;
+    private bool tapExecuted;
+    private List<int[]> allArrays = new();
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -137,7 +135,7 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ النسخة المحسنة مع int[] بدلاً من string
+    // ✅ النسخة المطلوبة مع التوقيت والنقرة في الثانية الثانية
     private async void StartShuffle(
         System.Threading.CancellationToken token)
     {
@@ -148,6 +146,12 @@ public class MainActivity : Activity
             while (isShuffling &&
                    !token.IsCancellationRequested)
             {
+                // ✅ حساب الوقت المنقضي
+                double elapsed =
+                    (DateTime.UtcNow -
+                     shuffleStartTime)
+                    .TotalSeconds;
+
                 int n = currentNumbers.Count;
 
                 for (int i = n - 1; i > 0; i--)
@@ -161,6 +165,10 @@ public class MainActivity : Activity
                      currentNumbers[i]);
                 }
 
+                // ✅ حفظ جميع المصفوفات بعد الخلط
+                allArrays.Add(
+                    currentNumbers.ToArray());
+
                 refreshCounter++;
 
                 if (refreshCounter >= 50)
@@ -169,58 +177,40 @@ public class MainActivity : Activity
                     RunOnUiThread(UpdateNumbers);
                 }
 
-                // ✅ التسجيل قبل وبعد العثور على الهدف باستخدام int[]
-                int[] currentArray = currentNumbers.ToArray();
-
-                if (!targetTriggered)
+                // ✅ تنفيذ النقرة فقط في الثانية الثانية (بين 1 و 2 ثانية)
+                if (!tapExecuted &&
+                    elapsed >= 1.0 &&
+                    elapsed < 2.0 &&
+                    (currentNumbers[0] == 1 ||
+                     currentNumbers[0] == 2 ||
+                     currentNumbers[0] == 3))
                 {
-                    beforeTap.Enqueue(currentArray);
+                    tapExecuted = true;
 
-                    while (beforeTap.Count > MAX_LOG_COUNT)
-                        beforeTap.Dequeue();
-                }
-                else
-                {
-                    if (afterTapCount < MAX_LOG_COUNT)
-                    {
-                        afterTap.Add(currentArray);
-                        afterTapCount++;
-                    }
+                    allArrays.Add(
+                        new int[] { -999 });
 
-                    if (afterTapCount >= MAX_LOG_COUNT)
-                    {
-                        SaveLog();
-
-                        isShuffling = false;
-
-                        RunOnUiThread(UpdateNumbers);
-
-                        break;
-                    }
-                }
-
-                if (currentNumbers[0] == 1 ||
-                    currentNumbers[0] == 2 ||
-                    currentNumbers[0] == 3)
-                {
-                    int foundNumber = currentNumbers[0];
-
-                    // ✅ تسجيل العثور على الهدف
-                    targetTriggered = true;
-                    afterTapCount = 0;
-                    afterTap.Clear();
-                    afterTap.Add(new int[] { -1 }); // علامة TARGET
-
-                    // ✅ تنفيذ النقرة وعرض Toast
                     TouchHelper.TapCenter();
 
                     RunOnUiThread(() =>
                     {
                         Toast.MakeText(
                             this,
-                            $"تم العثور على الرقم {foundNumber}",
+                            $"🎯 تم العثور على الرقم {currentNumbers[0]}",
                             ToastLength.Short).Show();
                     });
+                }
+
+                // ✅ إيقاف الخلط بعد ثانيتين
+                if (elapsed >= 2.0)
+                {
+                    SaveLog();
+
+                    isShuffling = false;
+
+                    RunOnUiThread(UpdateNumbers);
+
+                    break;
                 }
 
                 await Task.Yield();
@@ -235,43 +225,30 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة حفظ السجل مع تحويل int[] إلى string
+    // ✅ دالة حفظ السجل المعدلة
     private void SaveLog()
     {
         try
         {
             var lines = new List<string>();
 
-            lines.Add($"===== {MAX_LOG_COUNT} BEFORE TAP =====");
-
-            foreach (var arr in beforeTap)
-            {
-                lines.Add(string.Join(" ", arr));
-            }
-
+            lines.Add("===== SHUFFLE LOG =====");
+            lines.Add($"Total arrays: {allArrays.Count}");
             lines.Add("");
 
-            lines.Add($"===== {MAX_LOG_COUNT} AFTER TAP =====");
-
-            bool targetAdded = false;
-
-            foreach (var arr in afterTap)
+            foreach (var arr in allArrays)
             {
-                // ✅ التحقق من علامة TARGET
-                if (arr.Length == 1 && arr[0] == -1)
+                if (arr.Length == 1 &&
+                    arr[0] == -999)
                 {
-                    lines.Add("========== TARGET ==========");
-                    targetAdded = true;
+                    lines.Add(
+                        "========== TAP ==========");
                 }
                 else
                 {
-                    lines.Add(string.Join(" ", arr));
+                    lines.Add(
+                        string.Join(" ", arr));
                 }
-            }
-
-            if (!targetAdded)
-            {
-                lines.Insert(lines.Count - 50, "========== TARGET ==========");
             }
 
             string text =
@@ -359,11 +336,11 @@ public class MainActivity : Activity
             {
                 if (!activity.isShuffling)
                 {
+                    // ✅ التهيئة الجديدة
                     activity.isShuffling = true;
-                    activity.targetTriggered = false;
-                    activity.beforeTap.Clear();
-                    activity.afterTap.Clear();
-                    activity.afterTapCount = 0;
+                    activity.tapExecuted = false;
+                    activity.allArrays.Clear();
+                    activity.shuffleStartTime = DateTime.UtcNow;
 
                     activity.cancellationToken =
                         new System.Threading.CancellationTokenSource();
