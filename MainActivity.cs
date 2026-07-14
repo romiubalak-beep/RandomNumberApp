@@ -26,8 +26,8 @@ public class MainActivity : Activity
 
     private ShuffleReceiver? receiver;
 
-    // ✅ استخدام List مع سعة أولية 50000 للأداء
-    private List<int[]> allArrays = new List<int[]>(50000);
+    // ✅ مصفوفة ثنائية الأبعاد (Buffer) بسعة 100000
+    private readonly List<int[]> allArrays = new List<int[]>(100000);
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -133,7 +133,24 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ النسخة المحسنة مع StringBuilder و allArrays
+    // ✅ دالة الخلط السريع
+    private void Shuffle()
+    {
+        int n = currentNumbers.Count;
+
+        for (int i = n - 1; i > 0; i--)
+        {
+            int j =
+                RandomNumberGenerator.GetInt32(i + 1);
+
+            (currentNumbers[i],
+             currentNumbers[j]) =
+            (currentNumbers[j],
+             currentNumbers[i]);
+        }
+    }
+
+    // ✅ النسخة النهائية - Buffer كبير بدون تحديث واجهة أثناء الخلط
     private async void StartShuffle()
     {
         try
@@ -144,27 +161,15 @@ public class MainActivity : Activity
 
             allArrays.Clear();
 
-            while (true)
+            // ✅ الحلقة السريعة بدون await Task.Yield()
+            while ((DateTime.UtcNow - startTime).TotalMilliseconds < 1000)
             {
-                if ((DateTime.UtcNow - startTime)
-                    .TotalMilliseconds >= 1000)
-                    break;
+                Shuffle();
 
-                int n = currentNumbers.Count;
+                var copy = new int[150];
+                currentNumbers.CopyTo(copy);
 
-                for (int i = n - 1; i > 0; i--)
-                {
-                    int j =
-                        RandomNumberGenerator.GetInt32(i + 1);
-
-                    (currentNumbers[i],
-                     currentNumbers[j]) =
-                    (currentNumbers[j],
-                     currentNumbers[i]);
-                }
-
-                allArrays.Add(
-                    currentNumbers.ToArray());
+                allArrays.Add(copy);
             }
 
             SaveLog();
@@ -175,7 +180,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة SaveLog المحسنة مع StringBuilder
+    // ✅ دالة الحفظ المحسنة مع StringBuilder
     private void SaveLog()
     {
         try
@@ -188,8 +193,13 @@ public class MainActivity : Activity
 
             foreach (var arr in allArrays)
             {
-                sb.AppendLine(
-                    string.Join(" ", arr));
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    sb.Append(arr[i]);
+                    sb.Append(' ');
+                }
+
+                sb.AppendLine();
             }
 
             string text = sb.ToString();
