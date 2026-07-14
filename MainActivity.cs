@@ -26,6 +26,9 @@ public class MainActivity : Activity
 
     private ShuffleReceiver? receiver;
 
+    // ✅ استخدام List مع سعة أولية 50000 للأداء
+    private List<int[]> allArrays = new List<int[]>(50000);
+
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
@@ -130,56 +133,73 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ دالة StartShuffle الجديدة
-    private void StartShuffle()
+    // ✅ النسخة المحسنة مع StringBuilder و allArrays
+    private async void StartShuffle()
     {
         try
         {
-            // 1- النقرة أولاً
             TouchHelper.TapCenter();
 
-            // 2- خلط واحد فقط
-            int n = currentNumbers.Count;
+            var startTime = DateTime.UtcNow;
 
-            for (int i = n - 1; i > 0; i--)
+            allArrays.Clear();
+
+            while (true)
             {
-                int j =
-                    RandomNumberGenerator.GetInt32(i + 1);
+                if ((DateTime.UtcNow - startTime)
+                    .TotalMilliseconds >= 1000)
+                    break;
 
-                (currentNumbers[i],
-                 currentNumbers[j]) =
-                (currentNumbers[j],
-                 currentNumbers[i]);
+                int n = currentNumbers.Count;
+
+                for (int i = n - 1; i > 0; i--)
+                {
+                    int j =
+                        RandomNumberGenerator.GetInt32(i + 1);
+
+                    (currentNumbers[i],
+                     currentNumbers[j]) =
+                    (currentNumbers[j],
+                     currentNumbers[i]);
+                }
+
+                allArrays.Add(
+                    currentNumbers.ToArray());
             }
 
-            // 3- تحديث الواجهة
-            RunOnUiThread(UpdateNumbers);
-
-            // 4- حفظ المصفوفة
-            SaveSingleArray();
+            SaveLog();
         }
-        catch (Exception ex)
+        finally
         {
-            Android.Util.Log.Error(
-                "SHUFFLE",
-                ex.ToString());
+            isShuffling = false;
         }
     }
 
-    // ✅ دالة SaveSingleArray الجديدة
-    private void SaveSingleArray()
+    // ✅ دالة SaveLog المحسنة مع StringBuilder
+    private void SaveLog()
     {
         try
         {
-            string text =
-                string.Join(" ", currentNumbers);
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"===== SHUFFLE LOG =====");
+            sb.AppendLine($"Total arrays: {allArrays.Count}");
+            sb.AppendLine("");
+
+            foreach (var arr in allArrays)
+            {
+                sb.AppendLine(
+                    string.Join(" ", arr));
+            }
+
+            string text = sb.ToString();
 
             ContentValues values =
                 new ContentValues();
 
             values.Put(
                 MediaStore.IMediaColumns.DisplayName,
-                $"array_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+                $"shuffle_log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
 
             values.Put(
                 MediaStore.IMediaColumns.MimeType,
@@ -209,8 +229,8 @@ public class MainActivity : Activity
             {
                 Toast.MakeText(
                     this,
-                    "تم حفظ المصفوفة في Download",
-                    ToastLength.Short)
+                    "تم حفظ الملف في Download",
+                    ToastLength.Long)
                     .Show();
             });
         }
@@ -261,7 +281,6 @@ public class MainActivity : Activity
                     activity.cancellationToken =
                         new System.Threading.CancellationTokenSource();
 
-                    // ✅ استبدال StartShuffle(token) بـ StartShuffle()
                     activity.StartShuffle();
                 }
             }
