@@ -30,6 +30,9 @@ public class MainActivity : Activity
     private readonly List<int> allNumbers = new List<int>(15000000);
     private int position = 0;
 
+    // ✅ مدة الخلط 5 ثوان
+    private const int ShuffleDurationMs = 5000;
+
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
@@ -151,7 +154,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ النسخة مع Buffer واحد كبير
+    // ✅ النسخة مع مدة خلط 5 ثوان
     private async void StartShuffle()
     {
         try
@@ -164,7 +167,8 @@ public class MainActivity : Activity
             allNumbers.Clear();
             position = 0;
 
-            while ((DateTime.UtcNow - startTime).TotalMilliseconds < 1000)
+            // ✅ الخلط لمدة 5 ثوان
+            while ((DateTime.UtcNow - startTime).TotalMilliseconds < ShuffleDurationMs)
             {
                 Shuffle();
 
@@ -194,6 +198,7 @@ public class MainActivity : Activity
             int totalArrays = position / 150;
 
             sb.AppendLine($"===== SHUFFLE LOG =====");
+            sb.AppendLine($"Duration: {ShuffleDurationMs}ms");
             sb.AppendLine($"Total arrays: {totalArrays}");
             sb.AppendLine("");
 
