@@ -26,8 +26,9 @@ public class MainActivity : Activity
 
     private ShuffleReceiver? receiver;
 
-    // ✅ مصفوفة ثنائية الأبعاد (Buffer) بسعة 100000
-    private readonly List<int[]> allArrays = new List<int[]>(100000);
+    // ✅ مخزن واحد كبير (Buffer) بسعة 15 مليون
+    private readonly List<int> allNumbers = new List<int>(15000000);
+    private int position = 0;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -150,7 +151,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ النسخة النهائية - حفظ أول 10 أرقام فقط
+    // ✅ النسخة مع Buffer واحد كبير
     private async void StartShuffle()
     {
         try
@@ -159,22 +160,20 @@ public class MainActivity : Activity
 
             var startTime = DateTime.UtcNow;
 
-            allArrays.Clear();
+            // ✅ إعادة تعيين المخزن
+            allNumbers.Clear();
+            position = 0;
 
-            // ✅ الحلقة السريعة بدون await Task.Yield()
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < 1000)
             {
                 Shuffle();
 
-                // ✅ حفظ أول 10 أرقام فقط
-                var copy = new int[10];
-
-                for (int i = 0; i < 10; i++)
+                // ✅ إضافة الأرقام إلى المخزن مباشرة
+                for (int i = 0; i < 150; i++)
                 {
-                    copy[i] = currentNumbers[i];
+                    allNumbers.Add(currentNumbers[i]);
+                    position++;
                 }
-
-                allArrays.Add(copy);
             }
 
             SaveLog();
@@ -185,24 +184,25 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة الحفظ المحسنة مع StringBuilder - أول 10 أرقام فقط
+    // ✅ دالة الحفظ المحسنة مع StringBuilder من المخزن الواحد
     private void SaveLog()
     {
         try
         {
             var sb = new StringBuilder();
 
+            int totalArrays = position / 150;
+
             sb.AppendLine($"===== SHUFFLE LOG =====");
-            sb.AppendLine($"Total arrays: {allArrays.Count}");
+            sb.AppendLine($"Total arrays: {totalArrays}");
             sb.AppendLine("");
 
-            foreach (var arr in allArrays)
+            // ✅ قراءة من المخزن الواحد
+            for (int p = 0; p < position; p += 150)
             {
-                int count = Math.Min(10, arr.Length);
-
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < 150; i++)
                 {
-                    sb.Append(arr[i]);
+                    sb.Append(allNumbers[p + i]);
                     sb.Append(' ');
                 }
 
