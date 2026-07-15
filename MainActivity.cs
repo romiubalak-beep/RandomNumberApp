@@ -150,7 +150,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ النسخة النهائية - Buffer كبير بدون تحديث واجهة أثناء الخلط
+    // ✅ النسخة النهائية - حفظ أول 10 أرقام فقط
     private async void StartShuffle()
     {
         try
@@ -166,8 +166,13 @@ public class MainActivity : Activity
             {
                 Shuffle();
 
-                var copy = new int[150];
-                currentNumbers.CopyTo(copy);
+                // ✅ حفظ أول 10 أرقام فقط
+                var copy = new int[10];
+
+                for (int i = 0; i < 10; i++)
+                {
+                    copy[i] = currentNumbers[i];
+                }
 
                 allArrays.Add(copy);
             }
@@ -180,7 +185,7 @@ public class MainActivity : Activity
         }
     }
 
-    // ✅ دالة الحفظ المحسنة مع StringBuilder
+    // ✅ دالة الحفظ المحسنة مع StringBuilder - أول 10 أرقام فقط
     private void SaveLog()
     {
         try
@@ -193,7 +198,9 @@ public class MainActivity : Activity
 
             foreach (var arr in allArrays)
             {
-                for (int i = 0; i < arr.Length; i++)
+                int count = Math.Min(10, arr.Length);
+
+                for (int i = 0; i < count; i++)
                 {
                     sb.Append(arr[i]);
                     sb.Append(' ');
