@@ -33,6 +33,9 @@ public class MainActivity : Activity
     // ✅ مدة الخلط 5 ثوان
     private const int ShuffleDurationMs = 5000;
 
+    // ✅ استخدام Random.Shared للحصول على أداء أفضل
+    private static readonly Random rnd = Random.Shared;
+
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
@@ -137,15 +140,14 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ دالة الخلط السريع
+    // ✅ دالة الخلط السريع باستخدام Random.Shared
     private void Shuffle()
     {
         int n = currentNumbers.Count;
 
         for (int i = n - 1; i > 0; i--)
         {
-            int j =
-                RandomNumberGenerator.GetInt32(i + 1);
+            int j = rnd.Next(i + 1);
 
             (currentNumbers[i],
              currentNumbers[j]) =
