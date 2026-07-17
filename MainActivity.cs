@@ -137,19 +137,14 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ دالة الخلط الجديدة مع 10 تبديلات عشوائية
+    // ✅ دالة الخلط باستخدام OrderBy مع RandomNumberGenerator.GetInt32()
     private void Shuffle()
     {
-        for (int i = 0; i < 10; i++)
-        {
-            int a = RandomNumberGenerator.GetInt32(150);
-            int b = RandomNumberGenerator.GetInt32(150);
-
-            (currentNumbers[a],
-             currentNumbers[b]) =
-            (currentNumbers[b],
-             currentNumbers[a]);
-        }
+        currentNumbers = currentNumbers
+            .OrderBy(_ =>
+                RandomNumberGenerator.GetInt32(
+                    int.MaxValue))
+            .ToList();
     }
 
     // ✅ النسخة مع مدة خلط 5 ثوان
