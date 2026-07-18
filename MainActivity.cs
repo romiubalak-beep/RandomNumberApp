@@ -1,5 +1,3 @@
-namespace RandomNumberApp;
-
 using Android.App;
 using Android.Content;
 using Android.OS;
@@ -11,6 +9,8 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using Java.IO;
+
+namespace RandomNumberApp;
 
 [Activity(Label = "RandomApp", MainLauncher = true)]
 public class MainActivity : Activity
@@ -33,11 +33,18 @@ public class MainActivity : Activity
     // ✅ مدة الخلط 5 ثوان
     private const int ShuffleDurationMs = 5000;
 
+    // ✅ Mersenne Twister
+    private MersenneTwister? mt;
+
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
 
         SetContentView(Resource.Layout.activity_main);
+
+        // ✅ تهيئة Mersenne Twister
+        mt = new MersenneTwister(
+            (uint)DateTime.UtcNow.Ticks);
 
         for (int i = 1; i <= 150; i++)
             originalNumbers.Add(i);
@@ -137,14 +144,20 @@ public class MainActivity : Activity
             numbersTextView.Text = FormatNumbers(currentNumbers);
     }
 
-    // ✅ دالة الخلط باستخدام OrderBy مع RandomNumberGenerator.GetInt32()
+    // ✅ دالة الخلط باستخدام Mersenne Twister
     private void Shuffle()
     {
-        currentNumbers = currentNumbers
-            .OrderBy(_ =>
-                RandomNumberGenerator.GetInt32(
-                    int.MaxValue))
-            .ToList();
+        int n = currentNumbers.Count;
+
+        for (int i = n - 1; i > 0; i--)
+        {
+            int j = mt!.Next(i + 1);
+
+            (currentNumbers[i],
+             currentNumbers[j]) =
+            (currentNumbers[j],
+             currentNumbers[i]);
+        }
     }
 
     // ✅ النسخة مع مدة خلط 5 ثوان
